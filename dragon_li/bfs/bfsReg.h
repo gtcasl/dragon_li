@@ -31,7 +31,8 @@ public:
 				this->devFrontierIn,
 				this->devFrontierOut,
 				this->maxFrontierSize,
-				this->devFrontierSize);
+				this->devFrontierSize,
+				this->ctaOutputAssignment);
 
 		cudaError_t retVal;
 		if(retVal = cudaDeviceSynchronize()) {

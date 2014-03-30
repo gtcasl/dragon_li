@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
 		graph.displayCsr();
 
 	dragon_li::util::GraphCsrDevice< Types > graphDev;
-	graphDev.setup(graph);
+	if(graphDev.setup(graph))
+		return -1;
 
 	typedef dragon_li::util::Settings< 
 				Types,		//types
@@ -74,8 +75,11 @@ int main(int argc, char **argv) {
 													veryVerbose,
 													frontierScaleFactor);
 
-	bfsReg.setup(graphDev, bfsRegConfig);
-	bfsReg.search();
+	if(bfsReg.setup(graphDev, bfsRegConfig))
+		return -1;
+
+	if(bfsReg.search())
+		return -1;
 
 	return 0;
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <dragon_li/util/primitive.h>
+#include <dragon_li/util/ctaOutputAssignment.h>
+
 namespace dragon_li {
 namespace bfs {
 
@@ -10,6 +13,8 @@ class BfsRegDevice {
 	typedef typename Settings::SizeType SizeType;
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
+
+	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
 
 public:
 	class CtaWorkAssignment {
@@ -35,12 +40,13 @@ public:
 		}
 	};
 
-	__device__ void bfsRegCtaSearch(
+	static __device__ void bfsRegCtaSearch(
 		CtaWorkAssignment &ctaWorkAssignment,
 		VertexIdType * devColumnIndices,
 		SizeType * devRowOffsets,
 		VertexIdType * devFrontierIn,
-		VertexIdType * devFrontierOut) {
+		VertexIdType * devFrontierOut,
+		CtaOutputAssignment & ctaOutputAssignment) {
 
 
 		VertexIdType vertexId = -1;
@@ -56,12 +62,10 @@ public:
 
 		SizeType totalOutputCount;
 		SizeType localOffset; //output offset within cta
-		dragon_li::util::PrefixSum<Settings>::prefixSum(rowLength, 
-				localOffset,
+		localOffset = dragon_li::util::prefixSumCta<THREADS, SizeType>(rowLength, 
 				totalOutputCount);
 
-		ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
-		SizeType globalOffset = ctaOutputAssignment.outputOffset;
+		SizeType globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
 
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
@@ -77,7 +81,8 @@ public:
 		VertexIdType * devFrontierIn,
 		VertexIdType * devFrontierOut,
 		SizeType maxFrontierSize,
-		SizeType * devFrontierSize) {
+		SizeType * devFrontierSize,
+		CtaOutputAssignment & ctaOutputAssignment) {
 
 		SizeType frontierSize = *devFrontierSize;
 
@@ -91,7 +96,8 @@ public:
 				devColumnIndices,
 				devRowOffsets,
 				devFrontierIn,
-				devFrontierOut);
+				devFrontierOut,
+				ctaOutputAssignment);
 		}
 
 
@@ -106,7 +112,8 @@ __global__ void bfsRegSearchKernel(
 	typename Settings::VertexIdType * devFrontierIn,
 	typename Settings::VertexIdType * devFrontierOut,
 	typename Settings::SizeType maxFrontierSize,
-	typename Settings::SizeType * devFrontierSize) {
+	typename Settings::SizeType * devFrontierSize,
+	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
 
 	BfsRegDevice< Settings >::bfsRegSearchKernel(
 					devColumnIndices,
@@ -114,7 +121,8 @@ __global__ void bfsRegSearchKernel(
 					devFrontierIn,
 					devFrontierOut,
 					maxFrontierSize,
-					devFrontierSize);
+					devFrontierSize,
+					ctaOutputAssignment);
 
 }
 

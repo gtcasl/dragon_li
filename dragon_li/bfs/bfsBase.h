@@ -3,6 +3,7 @@
 #include <hydrazine/interface/debug.h>
 #include <dragon_li/util/graphCsrDevice.h>
 #include <dragon_li/util/userConfig.h>
+#include <dragon_li/util/ctaOutputAssignment.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 1
@@ -19,7 +20,7 @@ protected:
 	typedef typename Settings::EdgeWeightType EdgeWeightType;
 	typedef typename Settings::SizeType SizeType;
 	typedef typename dragon_li::util::GraphCsrDevice<Types> GraphCsrDevice;
-	typedef typename dragon_li::util::CtaOutputAssignment<Settings> CtaOutputAssignment;
+	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
 
 public:
 
@@ -140,6 +141,9 @@ public:
 				errorCuda(retVal);
 				return -1;
 			}
+
+			if(ctaOutputAssignment.setup() != 0)
+				return -1;
 
 			return 0;
 		}
