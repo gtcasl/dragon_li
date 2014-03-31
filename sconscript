@@ -50,18 +50,29 @@ env.Append(BUILDERS = {'Cuda' : Builder(
 )})
 
 dragon_li_src = []
-dragon_li_dirs = ['tests']
+dragon_li_header = []
+dragon_li_dirs = [
+	'tests',
+	'dragon_li/util',
+	'dragon_li/bfs'
+]
+
 dragon_li_install = env['install_path']
-exts = ['*.cu']
+srcexts = ['*.cu']
+headerexts = ['*.h', '*.cuh']
 for dirname in dragon_li_dirs:
-	for extname in exts:
+	for extname in srcexts:
 		src = env.Glob(os.path.join(dirname, extname))
 		dragon_li_src.extend(src)
+	for extname in headerexts:
+		header = env.Glob(os.path.join(dirname, extname))
+		dragon_li_header.extend(header)
 
 for app in dragon_li_src:
 	appfile = os.path.split(str(app))[1]
 	appname = os.path.splitext(appfile)[0]
 	mappedApp = env.Cuda(app)
+	env.Depends(mappedApp, dragon_li_header)
 	buildApp = env.Program(os.path.join('bin', appname), mappedApp, LIBS = [hydrazine_lib, '-lcudart'])
 	env.Install(dragon_li_install, [buildApp])
 
