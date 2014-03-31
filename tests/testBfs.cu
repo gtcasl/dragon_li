@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
 
 	typedef dragon_li::util::Settings< 
 				Types,		//types
-				256, 		//THREADS
-				260			//CTAS
+				32, 		//THREADS
+				2			//CTAS
 				> Settings;
 
 	dragon_li::bfs::BfsReg< Settings > bfsReg;

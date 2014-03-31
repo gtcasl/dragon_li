@@ -14,8 +14,7 @@ __device__ DataType prefixSumCta(DataType input, DataType &total, DataType carry
 
 	__syncthreads();
 
-	int blockSize = blockDim.x;
-	for(int step = 1; step < blockSize; step >>= 1) {
+	for(int step = 1; step < CTA_SIZE; step <<= 1) {
 		if(threadIdx.x >= step)
 			input = input + sharedMem[threadIdx.x - step];
 		__syncthreads();

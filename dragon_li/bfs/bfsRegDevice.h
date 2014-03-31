@@ -53,6 +53,7 @@ public:
 		SizeType rowOffset = -1;
 		SizeType nextRowOffset = -1;
 		SizeType rowLength = 0;
+
 		if(threadIdx.x < ctaWorkAssignment.workSize) {
 			vertexId = devFrontierIn[ctaWorkAssignment.workOffset + threadIdx.x];
 			rowOffset = devRowOffsets[vertexId];
@@ -65,11 +66,19 @@ public:
 		localOffset = dragon_li::util::prefixSumCta<THREADS, SizeType>(rowLength, 
 				totalOutputCount);
 
-		SizeType globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
+		__shared__ SizeType globalOffset;
+
+		if(threadIdx.x == 0 && totalOutputCount > 0) {
+			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
+			printf("cta %d, global off = %d\n", blockIdx.x, globalOffset);
+		}
+
+		__syncthreads();
 
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
 			devFrontierOut[globalOffset + localOffset + columnId] = neighborVertexId;
+			printf("%d.%d: neighbor %d, out index %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}
@@ -87,6 +96,7 @@ public:
 		SizeType frontierSize = *devFrontierSize;
 
 		CtaWorkAssignment ctaWorkAssignment(frontierSize);
+
 
 		while(ctaWorkAssignment.workOffset < frontierSize) {
 			ctaWorkAssignment.getCtaWorkAssignment();
