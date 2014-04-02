@@ -11,6 +11,7 @@ class BfsRegDevice {
 	
 	typedef typename Settings::VertexIdType VertexIdType;
 	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::MaskType MaskType;
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
 
@@ -40,12 +41,12 @@ public:
 		}
 	};
 
-	static __device__ void bfsRegCtaSearch(
+	static __device__ void bfsRegCtaExpand(
 		CtaWorkAssignment &ctaWorkAssignment,
 		VertexIdType * devColumnIndices,
 		SizeType * devRowOffsets,
-		VertexIdType * devFrontierIn,
-		VertexIdType * devFrontierOut,
+		VertexIdType * devFrontierContract,
+		VertexIdType * devFrontierExpand,
 		CtaOutputAssignment & ctaOutputAssignment) {
 
 
@@ -55,7 +56,7 @@ public:
 		SizeType rowLength = 0;
 
 		if(threadIdx.x < ctaWorkAssignment.workSize) {
-			vertexId = devFrontierIn[ctaWorkAssignment.workOffset + threadIdx.x];
+			vertexId = devFrontierContract[ctaWorkAssignment.workOffset + threadIdx.x];
 			rowOffset = devRowOffsets[vertexId];
 			nextRowOffset = devRowOffsets[vertexId + 1];
 			rowLength = nextRowOffset - rowOffset;
@@ -70,30 +71,76 @@ public:
 
 		if(threadIdx.x == 0 && totalOutputCount > 0) {
 			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
-			printf("cta %d, global off = %d\n", blockIdx.x, globalOffset);
 		}
 
 		__syncthreads();
 
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
-			devFrontierOut[globalOffset + localOffset + columnId] = neighborVertexId;
-			printf("%d.%d: neighbor %d, out index %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
+			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
+			//printf("%d.%d, neighborid %d, outputoffset %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}
 
 
-	static __device__ void bfsRegSearchKernel(
-		VertexIdType * devColumnIndices,
-		SizeType * devRowOffsets,
-		VertexIdType * devFrontierIn,
-		VertexIdType * devFrontierOut,
-		SizeType maxFrontierSize,
-		SizeType * devFrontierSize,
+	static __device__ void bfsRegCtaContract(
+		CtaWorkAssignment &ctaWorkAssignment,
+		MaskType * devVisitedMasks,
+		VertexIdType * devOriginalFrontier,
+		VertexIdType * devContractedFrontier,
 		CtaOutputAssignment & ctaOutputAssignment) {
 
-		SizeType frontierSize = *devFrontierSize;
+		VertexIdType vertexId = -1;
+
+		if(threadIdx.x < ctaWorkAssignment.workSize) {
+
+			vertexId = devOriginalFrontier[ctaWorkAssignment.workOffset + threadIdx.x];
+
+			SizeType maskLocation = vertexId >> Settings::MASK_BITS; 
+
+			SizeType maskBitLocation = 1 << (vertexId & Settings::MASK_MASK);
+
+			MaskType entireMask = devVisitedMasks[maskLocation];
+
+			if(entireMask & maskBitLocation) { //visited
+				vertexId = -1;	
+			}
+			else { //not visited
+				entireMask |= maskBitLocation;
+				devVisitedMasks[maskLocation] = entireMask;
+			}
+		}
+
+		SizeType validVertex = (vertexId == -1 ? 0 : 1);
+		SizeType totalOutputCount;
+		SizeType localOffset;
+		localOffset = dragon_li::util::prefixSumCta<THREADS, SizeType>(validVertex,
+				totalOutputCount);
+
+		__shared__ SizeType globalOffset;
+
+		if(threadIdx.x == 0 && totalOutputCount > 0) {
+			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
+		}
+
+		__syncthreads();
+		
+		if(vertexId != -1) {
+			devContractedFrontier[globalOffset + localOffset] = vertexId;
+			//printf("%d.%d, vertex %d, outputoffset %d\n", blockIdx.x, threadIdx.x, vertexId, globalOffset + localOffset);
+		}
+
+	}
+
+	static __device__ void bfsRegExpandKernel(
+		VertexIdType * devColumnIndices,
+		SizeType * devRowOffsets,
+		VertexIdType * devFrontierContract,
+		VertexIdType * devFrontierExpand,
+		SizeType maxFrontierSize,
+		SizeType frontierSize,
+		CtaOutputAssignment & ctaOutputAssignment) {
 
 		CtaWorkAssignment ctaWorkAssignment(frontierSize);
 
@@ -101,39 +148,85 @@ public:
 		while(ctaWorkAssignment.workOffset < frontierSize) {
 			ctaWorkAssignment.getCtaWorkAssignment();
 
-			bfsRegCtaSearch(
+			bfsRegCtaExpand(
 				ctaWorkAssignment,
 				devColumnIndices,
 				devRowOffsets,
-				devFrontierIn,
-				devFrontierOut,
+				devFrontierContract,
+				devFrontierExpand,
 				ctaOutputAssignment);
 		}
 
 
 	}
+
+	static __device__ void bfsRegContractKernel(
+		MaskType * devVisitedMasks,
+		VertexIdType * devOriginalFrontier,
+		VertexIdType * devContractedFrontier,
+		SizeType maxFrontierSize,
+		SizeType frontierSize,
+		CtaOutputAssignment & ctaOutputAssignment) {
+
+		CtaWorkAssignment ctaWorkAssignment(frontierSize);
+
+		while(ctaWorkAssignment.workOffset < frontierSize) {
+
+			ctaWorkAssignment.getCtaWorkAssignment();
+
+			bfsRegCtaContract(
+				ctaWorkAssignment,
+				devVisitedMasks,
+				devOriginalFrontier,
+				devContractedFrontier,
+				ctaOutputAssignment);
+
+		}
+
+	}
+		
 };
 
 
 template< typename Settings >
-__global__ void bfsRegSearchKernel(
+__global__ void bfsRegExpandKernel(
 	typename Settings::VertexIdType * devColumnIndices,
 	typename Settings::SizeType * devRowOffsets,
-	typename Settings::VertexIdType * devFrontierIn,
-	typename Settings::VertexIdType * devFrontierOut,
+	typename Settings::VertexIdType * devFrontierContract,
+	typename Settings::VertexIdType * devFrontierExpand,
 	typename Settings::SizeType maxFrontierSize,
-	typename Settings::SizeType * devFrontierSize,
+	typename Settings::SizeType frontierSize,
 	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
 
-	BfsRegDevice< Settings >::bfsRegSearchKernel(
+	BfsRegDevice< Settings >::bfsRegExpandKernel(
 					devColumnIndices,
 					devRowOffsets,
-					devFrontierIn,
-					devFrontierOut,
+					devFrontierContract,
+					devFrontierExpand,
 					maxFrontierSize,
-					devFrontierSize,
+					frontierSize,
 					ctaOutputAssignment);
 
+}
+
+template< typename Settings >
+__global__ void bfsRegContractKernel(
+	typename Settings::MaskType * devVisistedMasks,
+	typename Settings::VertexIdType * devOriginalFrontier,
+	typename Settings::VertexIdType * devContractedFrontier,
+	typename Settings::SizeType maxFrontierSize,
+	typename Settings::SizeType frontierSize,
+	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
+
+	BfsRegDevice< Settings >::bfsRegContractKernel(
+					devVisistedMasks,
+					devOriginalFrontier,
+					devContractedFrontier,
+					maxFrontierSize,
+					frontierSize,
+					ctaOutputAssignment);
+	
+	
 }
 
 }

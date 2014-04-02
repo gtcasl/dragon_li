@@ -19,6 +19,7 @@ protected:
 	typedef typename Settings::VertexIdType VertexIdType;
 	typedef typename Settings::EdgeWeightType EdgeWeightType;
 	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::MaskType MaskType;
 	typedef typename dragon_li::util::GraphCsrDevice<Types> GraphCsrDevice;
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
 
@@ -47,12 +48,14 @@ public:
 	SizeType maxFrontierSize;
 	SizeType frontierSize;
 	SizeType * devFrontierSize;
-	VertexIdType * devFrontierIn;
-	VertexIdType * devFrontierOut;
+	VertexIdType * devFrontierContract;
+	VertexIdType * devFrontierExpand;
+
+	//Visited mask
+	MaskType * devVisitedMasks;
 
 	//Iteration count
 	SizeType iteration;
-	SizeType * devIteration;
 
 	//Cta Output Assignemtn
 	CtaOutputAssignment ctaOutputAssignment;
@@ -65,10 +68,9 @@ public:
 		maxFrontierSize(0),
 		frontierSize(0),
 		devFrontierSize(NULL),
-		devFrontierIn(NULL),
-		devFrontierOut(NULL),
-		iteration(0),
-		devIteration(NULL) {}
+		devFrontierContract(NULL),
+		devFrontierExpand(NULL),
+		iteration(0) {}
 
 	virtual int search() = 0;
 
@@ -112,32 +114,36 @@ public:
 				errorCuda(retVal);
 				return -1;
 			}
-			frontierSize = 1; //always start with one vertex in frontier
-			if(retVal = cudaMemcpy(devFrontierSize, &frontierSize, sizeof(SizeType),
-							cudaMemcpyHostToDevice)) {
-				errorCuda(retVal);
-				return -1;
-			}
 
+			frontierSize = 1; //always start with one vertex in frontier
 
 			report("MaxFrontierSize " << maxFrontierSize);
-			if(retVal = cudaMalloc(&devFrontierIn, maxFrontierSize * sizeof(VertexIdType))) {
+			if(retVal = cudaMalloc(&devFrontierContract, maxFrontierSize * sizeof(VertexIdType))) {
 				errorCuda(retVal);
 				return -1;
 			}
 			VertexIdType startVertexId = 0; //always expand from id 0
-			if(retVal = cudaMemcpy(devFrontierIn, &startVertexId, sizeof(VertexIdType),
+			if(retVal = cudaMemcpy(devFrontierContract, &startVertexId, sizeof(VertexIdType),
 							cudaMemcpyHostToDevice)) {
 				errorCuda(retVal);
 				return -1;
 			}
 
-			if(retVal = cudaMalloc(&devFrontierOut, maxFrontierSize * sizeof(VertexIdType))) {
+			if(retVal = cudaMalloc(&devFrontierExpand, maxFrontierSize * sizeof(VertexIdType))) {
 				errorCuda(retVal);
 				return -1;
 			}
 
-			if(retVal = cudaMalloc(&devIteration, sizeof(SizeType))) {
+			//Init visited mask
+			SizeType visitedMaskSize = (vertexCount + sizeof(MaskType) - 1) / sizeof(MaskType);
+			if(retVal = cudaMalloc(&devVisitedMasks, visitedMaskSize * sizeof(MaskType))) {
+				errorCuda(retVal);
+				return -1;
+			}
+			std::vector< MaskType > visitedMasks(visitedMaskSize, 0);
+
+			if(retVal = cudaMemcpy(devVisitedMasks, visitedMasks.data(), 
+							visitedMaskSize * sizeof(MaskType), cudaMemcpyHostToDevice)) {
 				errorCuda(retVal);
 				return -1;
 			}
@@ -150,16 +156,6 @@ public:
 
 	virtual int displayIteration(bool veryVerbose = false) {
 		cudaError_t retVal;
-		if(retVal = cudaMemcpy(&iteration, devIteration, sizeof(SizeType), 
-						cudaMemcpyDeviceToHost)) {
-			errorCuda(retVal);
-			return -1;
-		}
-		if(retVal = cudaMemcpy(&frontierSize, devFrontierSize, sizeof(SizeType), 
-						cudaMemcpyDeviceToHost)) {
-			errorCuda(retVal);
-			return -1;
-		}
 
 		std::cout << "Iteration " << iteration <<": frontier size "
 			<< frontierSize << "\n";
@@ -168,7 +164,7 @@ public:
 		
 			std::vector< VertexIdType > frontier(frontierSize);
 		
-			if(retVal = cudaMemcpy((void *)(frontier.data()), devFrontierSize, 
+			if(retVal = cudaMemcpy((void *)(frontier.data()), devFrontierContract, 
 							frontierSize * sizeof(VertexIdType), 
 							cudaMemcpyDeviceToHost)) {
 				errorCuda(retVal);

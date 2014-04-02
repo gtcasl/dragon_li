@@ -42,7 +42,8 @@ int main(int argc, char **argv) {
 
 	typedef dragon_li::util::Types< int,	//VertexIdType
 							int,	//EdgeWeightType
-							int		//SizeType
+							int,		//SizeType
+							unsigned char //MaskType
 							> Types;
 	dragon_li::util::GraphCsr< Types > graph;
 
@@ -66,7 +67,8 @@ int main(int argc, char **argv) {
 	typedef dragon_li::util::Settings< 
 				Types,		//types
 				32, 		//THREADS
-				2			//CTAS
+				2,			//CTAS
+				3			//MASK_BITS
 				> Settings;
 
 	dragon_li::bfs::BfsReg< Settings > bfsReg;
