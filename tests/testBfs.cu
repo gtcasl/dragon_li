@@ -9,7 +9,7 @@
 #include <dragon_li/util/graphCsrDevice.h>
 
 #include <dragon_li/bfs/bfsReg.h>
-
+#include <dragon_li/bfs/bfsCpu.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 1
@@ -30,13 +30,17 @@ int main(int argc, char **argv) {
 	parser.parse("", "--display", displayGraph, false, "Display input graph");
 
 	bool verbose;
-	parser.parse("-v", "--verbose", verbose, false, "Verbose, display information");
+	parser.parse("-v", "--v1", verbose, false, "Verbose, display information");
 
 	bool veryVerbose;
-	parser.parse("", "--verbose2", veryVerbose, false, "Very verbose, display extended information");
+	parser.parse("", "--v2", veryVerbose, false, "Very verbose, display extended information");
 
 	double frontierScaleFactor;
 	parser.parse("", "--sf", frontierScaleFactor, 1.0, "Frontier scale factor, default 1.0");
+
+	bool verify;
+	parser.parse("-e", "--verify", verify, false, "Verify results against CPU implementation");
+
 
 	parser.parse();
 
@@ -81,6 +85,19 @@ int main(int argc, char **argv) {
 		return -1;
 
 	if(bfsReg.search())
+		return -1;
+
+	if(verify) {
+		dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+		if(!bfsReg.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+			std::cout << "Verify correct!\n";
+		}
+		else {
+			std::cout << "Incorrect!\n";
+		}
+	}
+
+	if(bfsReg.displayResult())
 		return -1;
 
 	return 0;

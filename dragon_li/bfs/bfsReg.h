@@ -45,14 +45,9 @@ public:
 			if(this->ctaOutputAssignment.getGlobalSize(this->frontierSize))
 				return -1;
 
-			if(this->displayIteration(true))
+			if(this->displayIteration())
 				return -1;
 
-//			//ping pong frontier buffer
-//			SizeType * devTmp = this->devFrontierContract;
-//			this->devFrontierContract = this->devFrontierExpand;
-//			this->devFrontierExpand = devTmp;
-	
 			this->iteration++;
 
 		}
@@ -67,11 +62,13 @@ public:
 			<<< CTAS, THREADS >>> (
 				this->devColumnIndices,
 				this->devRowOffsets,
+				this->devSearchDistance,
 				this->devFrontierContract,
 				this->devFrontierExpand,
 				this->maxFrontierSize,
 				this->frontierSize,
-				this->ctaOutputAssignment);
+				this->ctaOutputAssignment,
+				this->iteration);
 
 		cudaError_t retVal;
 		if(retVal = cudaDeviceSynchronize()) {

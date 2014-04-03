@@ -30,5 +30,6 @@ __device__ DataType prefixSumCta(DataType input, DataType &total, DataType carry
 		return sharedMem[threadIdx.x - 1] + carryIn;
 }
 
+
 }
 }

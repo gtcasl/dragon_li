@@ -3,10 +3,11 @@
 #include <hydrazine/interface/debug.h>
 #include <dragon_li/util/graphCsrDevice.h>
 #include <dragon_li/util/userConfig.h>
+#include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace bfs {
@@ -14,7 +15,7 @@ namespace bfs {
 template< typename Settings >
 class BfsBase {
 
-protected:
+public:
 	typedef typename Settings::Types Types;
 	typedef typename Settings::VertexIdType VertexIdType;
 	typedef typename Settings::EdgeWeightType EdgeWeightType;
@@ -23,7 +24,6 @@ protected:
 	typedef typename dragon_li::util::GraphCsrDevice<Types> GraphCsrDevice;
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
 
-public:
 
 	class UserConfig : public dragon_li::util::UserConfig {
 	public:
@@ -37,12 +37,17 @@ public:
 				frontierScaleFactor(_frontierScaleFactor) {}
 	};
 
+	//User control
+	bool verbose;
+	bool veryVerbose;
 
 	//Graph CSR information
 	SizeType vertexCount;
 	SizeType edgeCount;
 	VertexIdType * devColumnIndices;
 	SizeType * devRowOffsets;
+	SizeType * devSearchDistance;
+	std::vector<SizeType> searchDistance;
 
 	//Frontiers for bfs
 	SizeType maxFrontierSize;
@@ -65,11 +70,13 @@ public:
 		edgeCount(0),
 		devColumnIndices(NULL),
 		devRowOffsets(NULL),
+		devSearchDistance(NULL),
 		maxFrontierSize(0),
 		frontierSize(0),
 		devFrontierSize(NULL),
 		devFrontierContract(NULL),
 		devFrontierExpand(NULL),
+		devVisitedMasks(NULL),
 		iteration(0) {}
 
 	virtual int search() = 0;
@@ -82,7 +89,7 @@ public:
 				graphCsrDevice.edgeCount,
 				graphCsrDevice.devColumnIndices,
 				graphCsrDevice.devRowOffsets,
-				userConfig.frontierScaleFactor
+				userConfig
 			);
 	}
 
@@ -91,75 +98,115 @@ public:
 			SizeType _edgeCount,
 			VertexIdType * _devColumnIndices,
 			SizeType * _devRowOffsets,
-			double frontierScaleFactor
+			UserConfig & userConfig
 		) {
-		
-			if(!_vertexCount || !_edgeCount
-				|| !_devColumnIndices
-				|| !_devRowOffsets) {
-				errorMsg("Invalid parameters when setting up bfs base!");
-				return -1;
-			}
 
-			vertexCount = _vertexCount;
-			edgeCount = _edgeCount;
-			devColumnIndices = _devColumnIndices;
-			devRowOffsets = _devRowOffsets;
-
-			report("frontierSF " << frontierScaleFactor);
-			maxFrontierSize = (SizeType)((double)edgeCount * frontierScaleFactor);
-
-			cudaError_t retVal;
-			if(retVal = cudaMalloc(&devFrontierSize, sizeof(SizeType))) {
-				errorCuda(retVal);
-				return -1;
-			}
-
-			frontierSize = 1; //always start with one vertex in frontier
-
-			report("MaxFrontierSize " << maxFrontierSize);
-			if(retVal = cudaMalloc(&devFrontierContract, maxFrontierSize * sizeof(VertexIdType))) {
-				errorCuda(retVal);
-				return -1;
-			}
-			VertexIdType startVertexId = 0; //always expand from id 0
-			if(retVal = cudaMemcpy(devFrontierContract, &startVertexId, sizeof(VertexIdType),
-							cudaMemcpyHostToDevice)) {
-				errorCuda(retVal);
-				return -1;
-			}
-
-			if(retVal = cudaMalloc(&devFrontierExpand, maxFrontierSize * sizeof(VertexIdType))) {
-				errorCuda(retVal);
-				return -1;
-			}
-
-			//Init visited mask
-			SizeType visitedMaskSize = (vertexCount + sizeof(MaskType) - 1) / sizeof(MaskType);
-			if(retVal = cudaMalloc(&devVisitedMasks, visitedMaskSize * sizeof(MaskType))) {
-				errorCuda(retVal);
-				return -1;
-			}
-			std::vector< MaskType > visitedMasks(visitedMaskSize, 0);
-
-			if(retVal = cudaMemcpy(devVisitedMasks, visitedMasks.data(), 
-							visitedMaskSize * sizeof(MaskType), cudaMemcpyHostToDevice)) {
-				errorCuda(retVal);
-				return -1;
-			}
-
-			if(ctaOutputAssignment.setup() != 0)
-				return -1;
-
-			return 0;
+		verbose = userConfig.verbose;
+		veryVerbose = userConfig.veryVerbose;
+	
+		if(!_vertexCount || !_edgeCount
+			|| !_devColumnIndices
+			|| !_devRowOffsets) {
+			errorMsg("Invalid parameters when setting up bfs base!");
+			return -1;
 		}
 
-	virtual int displayIteration(bool veryVerbose = false) {
+		vertexCount = _vertexCount;
+		edgeCount = _edgeCount;
+		devColumnIndices = _devColumnIndices;
+		devRowOffsets = _devRowOffsets;
+
+		cudaError_t retVal;
+		if(retVal = cudaMalloc(&devSearchDistance, vertexCount * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, SizeType, SizeType>
+			(devSearchDistance, -1, vertexCount))
+			return -1;
+
+		report("frontierSF " << userConfig.frontierScaleFactor);
+		maxFrontierSize = (SizeType)((double)edgeCount * userConfig.frontierScaleFactor);
+
+		if(retVal = cudaMalloc(&devFrontierSize, sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		frontierSize = 1; //always start with one vertex in frontier
+
+		report("MaxFrontierSize " << maxFrontierSize);
+		if(retVal = cudaMalloc(&devFrontierContract, maxFrontierSize * sizeof(VertexIdType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		VertexIdType startVertexId = 0; //always expand from id 0
+		if(retVal = cudaMemcpy(devFrontierContract, &startVertexId, sizeof(VertexIdType),
+						cudaMemcpyHostToDevice)) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaMalloc(&devFrontierExpand, maxFrontierSize * sizeof(VertexIdType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		//Init visited mask
+		SizeType visitedMaskSize = (vertexCount + sizeof(MaskType) - 1) / sizeof(MaskType);
+		if(retVal = cudaMalloc(&devVisitedMasks, visitedMaskSize * sizeof(MaskType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(dragon_li::util::memsetDevice< Settings::CTAS, Settings::THREADS, MaskType, SizeType >
+			(devVisitedMasks, 0, visitedMaskSize))
+			return -1;
+
+		if(ctaOutputAssignment.setup() != 0)
+			return -1;
+
+		return 0;
+	}
+
+	virtual int getDevSearchDistance() {
+
 		cudaError_t retVal;
 
-		std::cout << "Iteration " << iteration <<": frontier size "
-			<< frontierSize << "\n";
+		if(searchDistance.empty()) {
+			searchDistance.resize(vertexCount);
 
+			if(retVal = cudaMemcpy((void *)(searchDistance.data()), devSearchDistance, 
+						vertexCount * sizeof(SizeType), cudaMemcpyDeviceToHost)) {
+				errorCuda(retVal);
+				return -1;
+			}
+		}
+		return 0;
+	}
+
+	virtual int verifyResult(std::vector<SizeType> &cpuSearchDistance) {
+
+		if(getDevSearchDistance())
+				return -1;
+
+		if(std::equal(cpuSearchDistance.begin(), 
+				cpuSearchDistance.end(), 
+				searchDistance.begin()))
+			return 0;
+		else
+			return 1;
+	}
+
+	virtual int displayIteration() {
+
+		cudaError_t retVal;
+		if(verbose || veryVerbose) {
+	
+			std::cout << "Iteration " << iteration <<": frontier size "
+				<< frontierSize << "\n";
+		}
+	
 		if(veryVerbose) {
 		
 			std::vector< VertexIdType > frontier(frontierSize);
@@ -181,10 +228,28 @@ public:
 		return 0;
 	}
 
+	virtual int displayResult() {
+
+		std::cout << "GPU search depth = " << iteration << "\n";
+
+		if(veryVerbose) {
+		
+
+			if(getDevSearchDistance())
+				return -1;
+
+			std::cout << "Search Distance: vertex_id(distance)\n";
+			for(SizeType i = 0; i < vertexCount; i++) {
+				std::cout << i << "(" << searchDistance[i] << ")\n";
+			}
+		}
+
+		return 0;
+
+	}
+
 
 	virtual int finish() { return 0;}
-
-	virtual int displayResult() { return 0;}	
 
 };
 

@@ -45,9 +45,11 @@ public:
 		CtaWorkAssignment &ctaWorkAssignment,
 		VertexIdType * devColumnIndices,
 		SizeType * devRowOffsets,
+		SizeType * devSearchDistance,
 		VertexIdType * devFrontierContract,
 		VertexIdType * devFrontierExpand,
-		CtaOutputAssignment & ctaOutputAssignment) {
+		CtaOutputAssignment & ctaOutputAssignment,
+		SizeType iteration) {
 
 
 		VertexIdType vertexId = -1;
@@ -57,6 +59,10 @@ public:
 
 		if(threadIdx.x < ctaWorkAssignment.workSize) {
 			vertexId = devFrontierContract[ctaWorkAssignment.workOffset + threadIdx.x];
+
+			SizeType searchDistance = devSearchDistance[vertexId];
+			if(searchDistance == -1)
+				devSearchDistance[vertexId] = iteration;
 			rowOffset = devRowOffsets[vertexId];
 			nextRowOffset = devRowOffsets[vertexId + 1];
 			rowLength = nextRowOffset - rowOffset;
@@ -136,11 +142,13 @@ public:
 	static __device__ void bfsRegExpandKernel(
 		VertexIdType * devColumnIndices,
 		SizeType * devRowOffsets,
+		SizeType * devSearchDistance,
 		VertexIdType * devFrontierContract,
 		VertexIdType * devFrontierExpand,
 		SizeType maxFrontierSize,
 		SizeType frontierSize,
-		CtaOutputAssignment & ctaOutputAssignment) {
+		CtaOutputAssignment & ctaOutputAssignment,
+		SizeType iteration) {
 
 		CtaWorkAssignment ctaWorkAssignment(frontierSize);
 
@@ -152,9 +160,11 @@ public:
 				ctaWorkAssignment,
 				devColumnIndices,
 				devRowOffsets,
+				devSearchDistance,
 				devFrontierContract,
 				devFrontierExpand,
-				ctaOutputAssignment);
+				ctaOutputAssignment,
+				iteration);
 		}
 
 
@@ -192,20 +202,24 @@ template< typename Settings >
 __global__ void bfsRegExpandKernel(
 	typename Settings::VertexIdType * devColumnIndices,
 	typename Settings::SizeType * devRowOffsets,
+	typename Settings::SizeType * devSearchDistance,
 	typename Settings::VertexIdType * devFrontierContract,
 	typename Settings::VertexIdType * devFrontierExpand,
 	typename Settings::SizeType maxFrontierSize,
 	typename Settings::SizeType frontierSize,
-	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
+	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment,
+	typename Settings::SizeType iteration) {
 
 	BfsRegDevice< Settings >::bfsRegExpandKernel(
 					devColumnIndices,
 					devRowOffsets,
+					devSearchDistance,
 					devFrontierContract,
 					devFrontierExpand,
 					maxFrontierSize,
 					frontierSize,
-					ctaOutputAssignment);
+					ctaOutputAssignment,
+					iteration);
 
 }
 
