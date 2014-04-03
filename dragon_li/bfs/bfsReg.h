@@ -12,8 +12,8 @@ namespace bfs {
 template< typename Settings >
 class BfsReg : public BfsBase< Settings > {
 
-	typedef typename Settings::VertexIdType VertexIdType;
-	typedef typename Settings::SizeType SizeType;
+//	typedef typename Settings::VertexIdType VertexIdType;
+//	typedef typename Settings::SizeType SizeType;
 
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
@@ -56,7 +56,7 @@ public:
 
 	}
 
-	int expand() {
+	virtual int expand() {
 				
 		bfsRegExpandKernel< Settings >
 			<<< CTAS, THREADS >>> (
