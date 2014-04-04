@@ -9,6 +9,7 @@
 #include <dragon_li/util/graphCsrDevice.h>
 
 #include <dragon_li/bfs/bfsReg.h>
+#include <dragon_li/bfs/bfsCdp.h>
 #include <dragon_li/bfs/bfsCpu.h>
 
 #undef REPORT_BASE
@@ -75,21 +76,46 @@ int main(int argc, char **argv) {
 				3			//MASK_BITS
 				> Settings;
 
-	dragon_li::bfs::BfsReg< Settings > bfsReg;
-	dragon_li::bfs::BfsReg< Settings >::UserConfig bfsRegConfig(
+//	dragon_li::bfs::BfsReg< Settings > bfsReg;
+//	dragon_li::bfs::BfsReg< Settings >::UserConfig bfsRegConfig(
+//													verbose,
+//													veryVerbose,
+//													frontierScaleFactor);
+//
+//	if(bfsReg.setup(graphDev, bfsRegConfig))
+//		return -1;
+//
+//	if(bfsReg.search())
+//		return -1;
+//
+//	if(verify) {
+//		dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+//		if(!bfsReg.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+//			std::cout << "Verify correct!\n";
+//		}
+//		else {
+//			std::cout << "Incorrect!\n";
+//		}
+//	}
+//
+//	if(bfsReg.displayResult())
+//		return -1;
+
+	dragon_li::bfs::BfsCdp< Settings > bfsCdp;
+	dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
 													verbose,
 													veryVerbose,
 													frontierScaleFactor);
 
-	if(bfsReg.setup(graphDev, bfsRegConfig))
+	if(bfsCdp.setup(graphDev, bfsCdpConfig))
 		return -1;
 
-	if(bfsReg.search())
+	if(bfsCdp.search())
 		return -1;
 
 	if(verify) {
 		dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
-		if(!bfsReg.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+		if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
 			std::cout << "Verify correct!\n";
 		}
 		else {
@@ -97,8 +123,9 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if(bfsReg.displayResult())
+	if(bfsCdp.displayResult())
 		return -1;
+
 
 	return 0;
 }

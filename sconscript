@@ -40,7 +40,7 @@ for dirname in hydrazine_dirs:
 hydrazine_lib = env.StaticLibrary('libhydrazine', hydrazine_src, LIBS=['-lrt'])
 
 NVCC = '/usr/local/cuda/bin/nvcc'
-NVCCFLAGS = '-arch=sm_20 -m64'
+NVCCFLAGS = '-arch=sm_35 -m64 -rdc=true'
 NVCCPATH = ['.']
 
 env.Append(BUILDERS = {'Cuda' : Builder(
@@ -73,6 +73,6 @@ for app in dragon_li_src:
 	appname = os.path.splitext(appfile)[0]
 	mappedApp = env.Cuda(app)
 	env.Depends(mappedApp, dragon_li_header)
-	buildApp = env.Program(os.path.join('bin', appname), mappedApp, LIBS = [hydrazine_lib, '-lcudart'])
+	buildApp = env.Program(os.path.join('bin', appname), mappedApp, LIBS = [hydrazine_lib, '-lcudart', '-lcudadevrt'])
 	env.Install(dragon_li_install, [buildApp])
 

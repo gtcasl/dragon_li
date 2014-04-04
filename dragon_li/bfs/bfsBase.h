@@ -55,6 +55,7 @@ public:
 	SizeType * devFrontierSize;
 	VertexIdType * devFrontierContract;
 	VertexIdType * devFrontierExpand;
+	bool frontierOverflow;
 
 	//Visited mask
 	MaskType * devVisitedMasks;
@@ -62,7 +63,7 @@ public:
 	//Iteration count
 	SizeType iteration;
 
-	//Cta Output Assignemtn
+	//Cta Output Assignement
 	CtaOutputAssignment ctaOutputAssignment;
 
 	BfsBase() : 
@@ -76,6 +77,7 @@ public:
 		devFrontierSize(NULL),
 		devFrontierContract(NULL),
 		devFrontierExpand(NULL),
+		frontierOverflow(false),
 		devVisitedMasks(NULL),
 		iteration(0) {}
 
@@ -127,6 +129,10 @@ public:
 
 		report("frontierSF " << userConfig.frontierScaleFactor);
 		maxFrontierSize = (SizeType)((double)edgeCount * userConfig.frontierScaleFactor);
+		if(maxFrontierSize <= 0.0) {
+			errorMsg("frontier scale factor is too small");
+			return -1;
+		}
 
 		if(retVal = cudaMalloc(&devFrontierSize, sizeof(SizeType))) {
 			errorCuda(retVal);

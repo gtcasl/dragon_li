@@ -12,8 +12,8 @@ namespace bfs {
 template< typename Settings >
 class BfsReg : public BfsBase< Settings > {
 
-//	typedef typename Settings::VertexIdType VertexIdType;
-//	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::VertexIdType VertexIdType;
+	typedef typename Settings::SizeType SizeType;
 
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
@@ -31,16 +31,26 @@ public:
 				return -1;
 	
 			report("Expand...");
-			expand();
+
+			if(expand())
+				return -1;
 		
 			if(this->ctaOutputAssignment.getGlobalSize(this->frontierSize))
 				return -1;
+
+			if(this->frontierSize > this->maxFrontierSize) {
+				this->frontierOverflow = true;
+				errorMsg("Frontier overflow! Please increase frontier scale factor!");
+				return -1;
+			}
 			
 			if(this->ctaOutputAssignment.reset())
 				return -1;
 
 			report("Contract...");
-			contract();
+
+			if(	contract() )
+				return -1;
 
 			if(this->ctaOutputAssignment.getGlobalSize(this->frontierSize))
 				return -1;
@@ -86,7 +96,6 @@ public:
 				this->devVisitedMasks,
 				this->devFrontierExpand, //Frontier from expand
 				this->devFrontierContract, //Output Frontier 
-				this->maxFrontierSize,
 				this->frontierSize,
 				this->ctaOutputAssignment);
 

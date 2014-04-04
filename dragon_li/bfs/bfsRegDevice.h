@@ -3,6 +3,9 @@
 #include <dragon_li/util/primitive.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
 
+#undef REPORT_BASE
+#define REPORT_BASE 0
+
 namespace dragon_li {
 namespace bfs {
 
@@ -48,6 +51,7 @@ public:
 		SizeType * devSearchDistance,
 		VertexIdType * devFrontierContract,
 		VertexIdType * devFrontierExpand,
+		SizeType maxFrontierSize,
 		CtaOutputAssignment & ctaOutputAssignment,
 		SizeType iteration) {
 
@@ -81,10 +85,13 @@ public:
 
 		__syncthreads();
 
+		if(ctaOutputAssignment.getGlobalSize() > maxFrontierSize) //overflow
+			return;
+
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
 			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
-			//printf("%d.%d, neighborid %d, outputoffset %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
+			reportDevice("%d.%d, neighborid %d, outputoffset %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}
@@ -134,7 +141,7 @@ public:
 		
 		if(vertexId != -1) {
 			devContractedFrontier[globalOffset + localOffset] = vertexId;
-			//printf("%d.%d, vertex %d, outputoffset %d\n", blockIdx.x, threadIdx.x, vertexId, globalOffset + localOffset);
+			reportDevice("%d.%d, vertex %d, outputoffset %d\n", blockIdx.x, threadIdx.x, vertexId, globalOffset + localOffset);
 		}
 
 	}
@@ -163,6 +170,7 @@ public:
 				devSearchDistance,
 				devFrontierContract,
 				devFrontierExpand,
+				maxFrontierSize,
 				ctaOutputAssignment,
 				iteration);
 		}
@@ -174,7 +182,6 @@ public:
 		MaskType * devVisitedMasks,
 		VertexIdType * devOriginalFrontier,
 		VertexIdType * devContractedFrontier,
-		SizeType maxFrontierSize,
 		SizeType frontierSize,
 		CtaOutputAssignment & ctaOutputAssignment) {
 
@@ -228,7 +235,6 @@ __global__ void bfsRegContractKernel(
 	typename Settings::MaskType * devVisistedMasks,
 	typename Settings::VertexIdType * devOriginalFrontier,
 	typename Settings::VertexIdType * devContractedFrontier,
-	typename Settings::SizeType maxFrontierSize,
 	typename Settings::SizeType frontierSize,
 	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
 
@@ -236,7 +242,6 @@ __global__ void bfsRegContractKernel(
 					devVisistedMasks,
 					devOriginalFrontier,
 					devContractedFrontier,
-					maxFrontierSize,
 					frontierSize,
 					ctaOutputAssignment);
 	

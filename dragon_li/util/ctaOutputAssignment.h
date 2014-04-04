@@ -64,6 +64,9 @@ public:
 		return atomicAdd(devOutputOffset, outputCount);
 	}
 
+	__device__ SizeType getGlobalSize() {
+		return *devOutputOffset;
+	}
 
 };
 
