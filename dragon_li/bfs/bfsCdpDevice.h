@@ -1,7 +1,7 @@
 #pragma once
 
 #include <dragon_li/bfs/bfsRegDevice.h>
-#include <dragon_li/bfs/bfsCdpThreadKernel.h>
+#include <dragon_li/bfs/bfsCdpThread.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 1
@@ -67,10 +67,10 @@ public:
 		if(ctaOutputAssignment.getGlobalSize() > maxFrontierSize) //overflow
 			return;
 
-		if(rowLength >= Settings::BFS_CDP_THRESHOLD) { //call cdp kernel
+		if(rowLength >= Settings::CDP_THRESHOLD) { //call cdp kernel
 
-			SizeType CDP_THREADS = Settings::BFS_CDP_THREADS;
-			SizeType cdpCtas = (rowLength + CDP_THREADS - 1) >> Settings::BFS_CDP_THREAD_BITS;
+			SizeType CDP_THREADS = Settings::CDP_THREADS;
+			SizeType cdpCtas = (rowLength + CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
 
 			bfsCdpThreadExpandKernel<Settings>
 				<<< cdpCtas, CDP_THREADS >>> (

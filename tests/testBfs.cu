@@ -73,7 +73,9 @@ int main(int argc, char **argv) {
 				Types,		//types
 				32, 		//THREADS
 				2,			//CTAS
-				3			//MASK_BITS
+				3,			//MASK_BITS
+				5,			//CDP_THREADS_BITS
+				32			//CDP_THRESHOLD
 				> Settings;
 
 //	dragon_li::bfs::BfsReg< Settings > bfsReg;

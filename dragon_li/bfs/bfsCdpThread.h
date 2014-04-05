@@ -4,7 +4,7 @@ template< typename Settings >
 __global__ void bfsCdpThreadExpandKernel(
 	typename Settings::SizeType rowOffset,
 	typename Settings::SizeType rowLength,
-	typename Settings::VertexId * devColumnIndices,
-	typename Settings::VertexId * devFrontierExpand) {
+	typename Settings::VertexIdType * devColumnIndices,
+	typename Settings::VertexIdType * devFrontierExpand) {
 
 }

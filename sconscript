@@ -45,7 +45,11 @@ NVCCPATH = ['.']
 
 env.Append(BUILDERS = {'Cuda' : Builder(
 	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -c -o $TARGET',
-	suffix = '.o',
+	suffix = '.cuo',
+	src_suffix = '.cu'
+),
+'Cuda_35' : Builder(
+	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -o $TARGET $LIBS',
 	src_suffix = '.cu'
 )})
 
@@ -71,8 +75,9 @@ for dirname in dragon_li_dirs:
 for app in dragon_li_src:
 	appfile = os.path.split(str(app))[1]
 	appname = os.path.splitext(appfile)[0]
-	mappedApp = env.Cuda(app)
-	env.Depends(mappedApp, dragon_li_header)
-	buildApp = env.Program(os.path.join('bin', appname), mappedApp, LIBS = [hydrazine_lib, '-lcudart', '-lcudadevrt'])
+#	mappedApp = env.Cuda(app)
+#	env.Depends(mappedApp, dragon_li_header)
+	buildApp = env.Cuda_35(os.path.join('bin', appname), app, LIBS = [hydrazine_lib, '-lcudart', '-lcudadevrt'])
+	env.Depends(buildApp, [dragon_li_header, hydrazine_lib])
 	env.Install(dragon_li_install, [buildApp])
 
