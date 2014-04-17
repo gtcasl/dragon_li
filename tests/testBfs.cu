@@ -3,11 +3,11 @@
 #include <hydrazine/interface/ArgumentParser.h>
 #include <hydrazine/interface/debug.h>
 
-#include <dragon_li/util/types.h>
-#include <dragon_li/util/settings.h>
 #include <dragon_li/util/graphCsr.h>
 #include <dragon_li/util/graphCsrDevice.h>
 
+#include <dragon_li/bfs/types.h>
+#include <dragon_li/bfs/settings.h>
 #include <dragon_li/bfs/bfsReg.h>
 #include <dragon_li/bfs/bfsCdp.h>
 #include <dragon_li/bfs/bfsCpu.h>
@@ -48,11 +48,32 @@ int main(int argc, char **argv) {
 
 	parser.parse();
 
-	typedef dragon_li::util::Types< int,	//VertexIdType
-							int,	//EdgeWeightType
-							int,		//SizeType
-							unsigned char //MaskType
+	//Basic Types and Settings
+	typedef dragon_li::util::Types<
+							int 			//SizeType
+							> _Types;
+	typedef dragon_li::util::Settings< 
+				_Types,						//types
+				256, 						//THREADS
+				104,						//CTAS
+				5,							//CDP_THREADS_BITS
+				32							//CDP_THRESHOLD
+				> _Settings;
+
+
+
+	typedef dragon_li::bfs::Types<
+							_Types, 		//Basic Types
+							int,			//VertexIdType
+							int,			//EdgeWeightType
+							unsigned char 	//MaskType
 							> Types;
+	typedef dragon_li::bfs::Settings<
+				_Settings, 					//Basic Settings
+				Types,						//BFS Types
+				3 							//Mask_BITS
+				> Settings;
+
 	dragon_li::util::GraphCsr< Types > graph;
 
 	if(graph.buildFromFile(inputGraphFile, graphFormat))
@@ -66,15 +87,6 @@ int main(int argc, char **argv) {
 	dragon_li::util::GraphCsrDevice< Types > graphDev;
 	if(graphDev.setup(graph))
 		return -1;
-
-	typedef dragon_li::util::Settings< 
-				Types,		//types
-				256, 		//THREADS
-				104,		//CTAS
-				3,			//MASK_BITS
-				5,			//CDP_THREADS_BITS
-				32			//CDP_THRESHOLD
-				> Settings;
 	
 	if(!cdp) {
 		dragon_li::bfs::BfsReg< Settings > bfsReg;
