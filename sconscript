@@ -40,16 +40,15 @@ for dirname in hydrazine_dirs:
 hydrazine_lib = env.StaticLibrary('libhydrazine', hydrazine_src, LIBS=['-lrt'])
 
 NVCC = '/usr/local/cuda/bin/nvcc'
-NVCCFLAGS = '-arch=sm_35 -m64 -rdc=true'
+NVCCFLAGS = '-arch=sm_35 -m64 -O3'
 NVCCPATH = ['.']
 
 env.Append(BUILDERS = {'Cuda' : Builder(
-	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -c -o $TARGET',
-	suffix = '.cuo',
+	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -o $TARGET $LIBS',
 	src_suffix = '.cu'
 ),
 'Cuda_35' : Builder(
-	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -o $TARGET $LIBS',
+	action = NVCC + ' -I. ' + NVCCFLAGS + ' -rdc=true $SOURCE -o $TARGET $LIBS',
 	src_suffix = '.cu'
 )})
 

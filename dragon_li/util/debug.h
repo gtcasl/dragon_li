@@ -10,19 +10,25 @@
 #define errorCuda(x) errorMsg(cudaGetErrorString(x))
 
 #ifndef NDEBUG
-	#define reportDevice \
-		if(REPORT_BASE >= REPORT_ERROR_LEVEL) \
-			printf
+	#define reportDevice(...) \
+		if(REPORT_BASE >= REPORT_ERROR_LEVEL) { \
+			printf("(Device Debug): "); \
+			printf(__VA_ARGS__); \
+			printf("\n"); \
+		}
 #else
-	#define reportDevice
+	#define reportDevice(...)
 #endif
 
 
-#if !defined(NDEBUG) && REPORT_BASE >= REPORT_ERROR_LEVEL
-	#define errorCudaDevice() { \
-		cudaError_t retVal = cudaGetLastError(); \
-		if(retVal) \
-			printf(cudaGetErrorString(x));
+#ifndef NDEBUG
+	#define checkErrorDevice() { \
+		if(REPORT_BASE >= REPORT_ERROR_LEVEL) { \
+			cudaError_t retVal = cudaGetLastError(); \
+			if(retVal) \
+				printf(cudaGetErrorString(retVal)); \
+		}\
+	}
 #else
 	#define errorCudaDevice()
 #endif

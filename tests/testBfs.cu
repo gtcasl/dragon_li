@@ -13,7 +13,7 @@
 #include <dragon_li/bfs/bfsCpu.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 
 int main(int argc, char **argv) {
@@ -42,6 +42,9 @@ int main(int argc, char **argv) {
 	bool verify;
 	parser.parse("-e", "--verify", verify, false, "Verify results against CPU implementation");
 
+	bool cdp; //use CDP
+	parser.parse("", "--cdp", cdp, false, "Use Cuda Dynamic Parallelism");
+
 
 	parser.parse();
 
@@ -52,18 +55,13 @@ int main(int argc, char **argv) {
 							> Types;
 	dragon_li::util::GraphCsr< Types > graph;
 
-	if(!graphFormat.compare("gr")) {
+	if(graph.buildFromFile(inputGraphFile, graphFormat))
+		return -1;
 
-		if(graph.buildFromGRFile(inputGraphFile.c_str()))
+	if(displayGraph) {
+		if(graph.displayCsr(veryVerbose))
 			return -1;
 	}
-	else {
-		errorMsg("Unrecoginized graph format");
-		return -1;
-	}
-
-	if(displayGraph)
-		graph.displayCsr();
 
 	dragon_li::util::GraphCsrDevice< Types > graphDev;
 	if(graphDev.setup(graph))
@@ -71,62 +69,65 @@ int main(int argc, char **argv) {
 
 	typedef dragon_li::util::Settings< 
 				Types,		//types
-				32, 		//THREADS
-				2,			//CTAS
+				256, 		//THREADS
+				104,		//CTAS
 				3,			//MASK_BITS
 				5,			//CDP_THREADS_BITS
 				32			//CDP_THRESHOLD
 				> Settings;
-
-//	dragon_li::bfs::BfsReg< Settings > bfsReg;
-//	dragon_li::bfs::BfsReg< Settings >::UserConfig bfsRegConfig(
-//													verbose,
-//													veryVerbose,
-//													frontierScaleFactor);
-//
-//	if(bfsReg.setup(graphDev, bfsRegConfig))
-//		return -1;
-//
-//	if(bfsReg.search())
-//		return -1;
-//
-//	if(verify) {
-//		dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
-//		if(!bfsReg.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
-//			std::cout << "Verify correct!\n";
-//		}
-//		else {
-//			std::cout << "Incorrect!\n";
-//		}
-//	}
-//
-//	if(bfsReg.displayResult())
-//		return -1;
-
-	dragon_li::bfs::BfsCdp< Settings > bfsCdp;
-	dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
-													verbose,
-													veryVerbose,
-													frontierScaleFactor);
-
-	if(bfsCdp.setup(graphDev, bfsCdpConfig))
-		return -1;
-
-	if(bfsCdp.search())
-		return -1;
-
-	if(verify) {
-		dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
-		if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
-			std::cout << "Verify correct!\n";
+	
+	if(!cdp) {
+		dragon_li::bfs::BfsReg< Settings > bfsReg;
+		dragon_li::bfs::BfsReg< Settings >::UserConfig bfsRegConfig(
+														verbose,
+														veryVerbose,
+														frontierScaleFactor);
+	
+		if(bfsReg.setup(graphDev, bfsRegConfig))
+			return -1;
+	
+		if(bfsReg.search())
+			return -1;
+	
+		if(verify) {
+			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+			if(!bfsReg.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
 		}
-		else {
-			std::cout << "Incorrect!\n";
-		}
+	
+		if(bfsReg.displayResult())
+			return -1;
 	}
-
-	if(bfsCdp.displayResult())
-		return -1;
+	else {
+		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
+		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
+														verbose,
+														veryVerbose,
+														frontierScaleFactor);
+	
+		if(bfsCdp.setup(graphDev, bfsCdpConfig))
+			return -1;
+	
+		if(bfsCdp.search())
+			return -1;
+	
+		if(verify) {
+			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+			if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
+	
+		if(bfsCdp.displayResult())
+			return -1;
+	}
 
 
 	return 0;

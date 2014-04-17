@@ -7,6 +7,8 @@
 #include <hydrazine/interface/debug.h>
 
 #include <dragon_li/util/graphFile.h>
+#include <dragon_li/util/graphFileGR.h>
+#include <dragon_li/util/graphFileMetis.h>
 #include <dragon_li/util/types.h>
 
 #undef REPORT_BASE
@@ -31,12 +33,13 @@ public:
 	std::vector< VertexIdType > columnIndices;
 	std::vector< EdgeWeightType > columnWeights;
 	std::vector< SizeType > rowOffsets;
+	std::vector< SizeType > histogram;
 
 	GraphCsr();
 
-	int buildFromGRFile(const char * fileName);
+	int buildFromFile(const std::string & fileName, const std::string & format);
 
-	int displayCsr();
+	int displayCsr(bool veryVerbose);
 
 };
 
@@ -46,15 +49,30 @@ GraphCsr< Types >::GraphCsr():
 }
 
 template< typename Types >
-int GraphCsr< Types >::buildFromGRFile(const char *fileName) {
+int GraphCsr< Types >::buildFromFile(const std::string & fileName, 
+	const std::string & format) {
 	
-	GraphFileGR< Types > graphFileGR;
+	GraphFile< Types > *graphFile;
 
-	if(graphFileGR.build(fileName))
+	if(!format.compare("gr")) {
+		graphFile = new GraphFileGR< Types >();
+	}
+	else if(!format.compare("metis")) {
+		graphFile = new GraphFileMetis< Types >();
+	}
+	else {
+		errorMsg("Unrecoginized graph format");
+		return -1;
+	}
+
+
+	if(graphFile->build(fileName))
 		return -1;
 
-	vertexCount = graphFileGR.vertexCount;
-	edgeCount = graphFileGR.edgeCount;
+	histogram = graphFile->histogram;
+
+	vertexCount = graphFile->vertexCount;
+	edgeCount = graphFile->edgeCount;
 
 	columnIndices.resize(edgeCount);
 	columnWeights.resize(edgeCount);
@@ -65,11 +83,11 @@ int GraphCsr< Types >::buildFromGRFile(const char *fileName) {
 			rowOffsets[0] = 0;
 		else {
 			rowOffsets[i] = 
-				rowOffsets[i - 1] + graphFileGR.vertices[i - 1].degree;
+				rowOffsets[i - 1] + graphFile->vertices[i - 1].degree;
 		}
 
 		std::list< GraphFileEdgeData > &edges = 
-			graphFileGR.vertices[i].edges;
+			graphFile->vertices[i].edges;
 
 		size_t startId = rowOffsets[i];
 		for(typename std::list< GraphFileEdgeData >::iterator 
@@ -84,26 +102,39 @@ int GraphCsr< Types >::buildFromGRFile(const char *fileName) {
 	}
 
 	rowOffsets[vertexCount] = rowOffsets[vertexCount - 1] + 
-		graphFileGR.vertices[vertexCount - 1].degree;
+		graphFile->vertices[vertexCount - 1].degree;
+
+	delete graphFile;
 
 	return 0;
 }
 
 template< typename Types >
-int GraphCsr< Types >::displayCsr() {
+int GraphCsr< Types >::displayCsr(bool veryVerbose) {
 	std::cout << "CSR Graph: vertex count " << vertexCount << ", edge count " << edgeCount << "\n";
-	for (size_t vertex = 0; vertex < vertexCount; vertex++) {
-		std::cout << vertex << ": ";
-		for (size_t edge = rowOffsets[vertex]; edge < rowOffsets[vertex + 1]; edge++) {
-			std::cout << columnIndices[edge] << 
-			"(" << columnWeights[edge] << ")" << ", ";
+
+	if(veryVerbose) {
+		for (size_t vertex = 0; vertex < vertexCount; vertex++) {
+			std::cout << vertex << ": ";
+			for (size_t edge = rowOffsets[vertex]; edge < rowOffsets[vertex + 1]; edge++) {
+				std::cout << columnIndices[edge] << 
+				"(" << columnWeights[edge] << ")" << ", ";
+			}
+			std::cout << "total " << rowOffsets[vertex + 1] - rowOffsets[vertex] << "\n";
 		}
-		std::cout << "total " << rowOffsets[vertex + 1] - rowOffsets[vertex] << "\n";
 	}
+
+	std::cout << "Degree Histogram\n";
+	int histogramSize = histogram.size();
+	for(int i = -1; i < histogramSize - 1; i++) {
+		std::cout << "\tDegree 2^" << i << ": " << histogram[i + 1] << "\n";\
+	}
+	std::cout << "\n";
 
 	return 0;
 }
 
 
 }
+
 }

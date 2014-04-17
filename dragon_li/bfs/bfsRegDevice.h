@@ -91,7 +91,7 @@ public:
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
 			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
-			reportDevice("%d.%d, neighborid %d, outputoffset %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
+			reportDevice("%d.%d, neighborid %d, outputoffset %d", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}
@@ -141,7 +141,7 @@ public:
 		
 		if(vertexId != -1) {
 			devContractedFrontier[globalOffset + localOffset] = vertexId;
-			reportDevice("%d.%d, vertex %d, outputoffset %d\n", blockIdx.x, threadIdx.x, vertexId, globalOffset + localOffset);
+			reportDevice("%d.%d, vertex %d, outputoffset %d", blockIdx.x, threadIdx.x, vertexId, globalOffset + localOffset);
 		}
 
 	}

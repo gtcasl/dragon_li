@@ -21,6 +21,9 @@ public:
 
 	int expand() {
 
+
+		cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 8192);
+
 		bfsCdpExpandKernel< Settings >
 			<<< CTAS, THREADS >>> (
 				this->devColumnIndices,

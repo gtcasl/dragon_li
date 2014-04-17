@@ -44,13 +44,9 @@ public:
 	std::list< GraphFileEdgeData > edges;
 
 	GraphFileVertexData() : vertexId(-1), degree(0) {}
+
 	GraphFileVertexData(VertexIdType id, SizeType d = 0) : vertexId(id), degree(d) {}
-//	GraphFileVertexData & operator= (GraphFileVertexData && vertex) {
-//		if (this == &vertex) return *this;
-//		std::swap(degree, vertex.degree);
-//		std::swap(vertexId, vertex.vertexId);
-//		std::swap(edges, vertex.edges);
-//	}
+
 	GraphFileVertexData & operator= (const GraphFileVertexData & vertex) {
 		if (this == &vertex) return *this;
 		degree = vertex.degree;
@@ -73,9 +69,9 @@ public:
 	}
 };
 
-template<typename Types> 
-class GraphFileGR {
-	
+template< typename Types >
+class GraphFile {
+
 	typedef typename Types::VertexIdType VertexIdType;
 	typedef typename Types::EdgeWeightType EdgeWeightType;
 	typedef typename Types::SizeType SizeType;
@@ -85,107 +81,38 @@ public:
 	SizeType edgeCount;
 
 	std::vector< GraphFileVertexData< Types > > vertices;
+
+	std::vector< SizeType > histogram;
 	
-	GraphFileGR();
+	GraphFile() : vertexCount(0), edgeCount(0) {}
 
-	int build(const char * fileName);
+	virtual int build(const std::string & fileName) = 0;
 
+	int computeHistogram() {
+
+		if(vertices.empty())
+			errorMsg("Graph has not been built!");
+
+		SizeType maxLogDegree = -1;
+		histogram.resize(maxLogDegree + 2, 0);
+		for(SizeType i = 0; i < vertexCount; i++) {
+			SizeType degree = vertices[i].degree;
+			SizeType logDegree = -1;
+			while(degree > 0) {
+				degree >>= 1;
+				logDegree++;
+			}
+			report("Log degree " << logDegree);
+			if(logDegree > maxLogDegree) {
+				maxLogDegree = logDegree;
+				histogram.resize(maxLogDegree + 2, 0);
+			}
+			histogram[logDegree + 1]++;
+		}
+	
+		return 0;
+	}
 };
-
-
-template< typename Types >
-GraphFileGR< Types >::GraphFileGR() :
-	vertexCount(0), edgeCount(0) {
-}
-
-template< typename Types >
-int GraphFileGR< Types >::build(const char * fileName) {
-
-	std::ifstream grFile(fileName);
-	if(!grFile.is_open()) {
-		errorMsg("Error opening file " << fileName);
-		return -1;
-	}
-
-	char keyWord;
-	char tmpFileBuf[256];
-
-	grFile >> keyWord;
-
-	while(!grFile.fail()) {
-
-		if( keyWord == 'p') { 
-		
-			//Problem line, format: p sp total_vertex_count total_edge_count
-
-			grFile >> tmpFileBuf;
-
-			//p followed by sp
-			if(!std::strcmp(tmpFileBuf, "sp")) {
-
-				//get vertex and edge count
-				grFile >> vertexCount;
-				grFile >> edgeCount;
-
-				vertices.resize(vertexCount);
-
-				//initialize vertex data
-				for(SizeType i = 0; i < vertexCount; i++)
-					vertices[i] = GraphFileVertexData< Types >(i);
-			}
-			else{
-				errorMsg("Error GR File format for " << fileName);
-				grFile.close();
-				return -1;
-			}
-
-		}
-		else if( keyWord == 'a') { //Arc or edge description line
-			//format: a from_vertex to_vertex edge_weight
-
-			SizeType fromVertexId, toVertexId;
-			EdgeWeightType weight;
-
-			//get edge
-			grFile >> fromVertexId >> toVertexId >> weight;
-
-			//GR File always start vertex ID from 1
-			fromVertexId--;
-			toVertexId--;
-
-			//check boundary
-			if(fromVertexId >= vertexCount) {
-				errorMsg("VertexId " << fromVertexId << " exceeds limit");
-				grFile.close();
-				return -1;
-			}
-			if(toVertexId >= vertexCount) {
-				errorMsg("VertexId " << toVertexId << " exceeds limit");
-				grFile.close();
-				return -1;
-			}
-
-			//insert edge to vertex data
-			vertices[fromVertexId].insertEdge(toVertexId, weight);
-
-		}
-		else if( keyWord != 'c') { //not comment line, then unknown keyword
-			errorMsg("Error GR File format for " << fileName);
-			grFile.close();
-			return -1;
-		}
-
-		grFile.getline(tmpFileBuf, 256); //skip to next line
-
-		grFile >> keyWord;
-
-	}
-
-	grFile.close();
-	return 0;
-
-}
-     	
      	
 }    	
 }    	

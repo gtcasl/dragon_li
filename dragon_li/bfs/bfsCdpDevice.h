@@ -4,7 +4,7 @@
 #include <dragon_li/bfs/bfsCdpThread.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace bfs {
@@ -77,10 +77,12 @@ public:
 					rowOffset,
 					rowLength,
 					devColumnIndices,
-					devFrontierExpand);
+					devFrontierExpand,
+					globalOffset,
+					localOffset);
 
-			cudaError_t retVal = cudaGetLastError();
-			if(retVal)
+
+			checkErrorDevice();
 
 			rowLength = 0;
 		}
@@ -89,7 +91,7 @@ public:
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
 			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
-			reportDevice("%d.%d, neighborid %d, outputoffset %d\n", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
+//			reportDevice("%d.%d, neighborid %d, outputoffset %d", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}
