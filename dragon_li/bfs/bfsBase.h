@@ -67,6 +67,8 @@ public:
 	CtaOutputAssignment ctaOutputAssignment;
 
 	BfsBase() : 
+		verbose(false),
+		veryVerbose(false),
 		vertexCount(0),
 		edgeCount(0),
 		devColumnIndices(NULL),

@@ -11,18 +11,42 @@ class JoinBase {
 
 public:
 
-	typedef Settings::SizeType SizeType;
+	typedef typename Settings::Types Types;
+	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::DataType DataType;
 
 
 	//User control
 	bool verbose;
 	bool veryVerbose;
 
-	SizeType inputCount;
+	//Join information
+	SizeType inputCountLeft;
+	SizeType inputCountRight;
+	SizeType outputCount;
+
+	//Join Device information
+	DataType * devJoinInputLeft;
+	DataType * devJoinInputRight;
+	DataType * devJoinOutput;
+	SizeType * devJoinOutputCount;
+
+	JoinBase() : 
+		verbose(false),
+		veryVerbose(false),
+		inputCountLeft(0),
+		inputCountRight(0),
+		outputCount(0),
+		devjoinInputLeft(NULL),
+		devJoinInputRight(NULL),
+		devJoinOutput(NULL),
+		devJoinOutputCount(NULL) {}
 
 	virtual int join() = 0;
 
-	virtual int setup() {
+	virtual int setup(JoinData<Types> joinData) {
+
+		cudaMalloc(&devJoininputLeft
 		return 0;
 	}
 
