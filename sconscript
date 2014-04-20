@@ -57,7 +57,8 @@ dragon_li_header = []
 dragon_li_dirs = [
 	'tests',
 	'dragon_li/util',
-	'dragon_li/bfs'
+	'dragon_li/bfs',
+	'dragon_li/amr'
 ]
 
 dragon_li_install = env['install_path']

@@ -7,7 +7,7 @@ namespace dragon_li {
 namespace util {
 
 template<typename DataType, typename SizeType>
-int random(std::vector<DataType> & data, 
+int random(DataType * data, 
 			SizeType count,
 			DataType rangeStart,
 			DataType rangeEnd) {
@@ -16,7 +16,7 @@ int random(std::vector<DataType> & data,
 }
 
 template<typename int, typename SizeType>
-int random(std::vector<int> & data, 
+int random(int * data, 
 			SizeType count,
 			int rangeStart,
 			int rangeEnd) {
