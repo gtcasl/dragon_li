@@ -165,7 +165,7 @@ public:
 			(devVisitedMasks, 0, visitedMaskSize))
 			return -1;
 
-		if(ctaOutputAssignment.setup() != 0)
+		if(ctaOutputAssignment.setup(0) != 0)
 			return -1;
 
 		return 0;

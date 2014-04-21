@@ -69,6 +69,15 @@ public:
 		maxGridDataSize = userConfig.maxGridDataSize;
 		maxRefineLevel = userConfig.maxRefineLevel;
 
+		if(maxGridDataSize <= 0) {
+			errorMsg("Invalid maxGridDataSize " << maxGridDataSize);
+			return -1;
+		}
+		if(maxRefineLevel <= 0) {
+			errorMsg("Invalid maxRefineLevel " << maxRefineLevel);
+			return -1;
+		}
+
 		cudaError_t retVal;
 		if(retVal = cudaMalloc(&devGridData, maxGridDataSize * sizeof(DataType))) {
 			errorCuda(retVal);
@@ -91,7 +100,8 @@ public:
 			(devGridPointer, -1, maxGridDataSize))
 			return -1;
 
-		if(ctaOutputAssignment.setup() != 0)
+		//Output starts after activeGridSize
+		if(ctaOutputAssignment.setup(activeGridSize) != 0)
 			return -1;
 
 		return 0;

@@ -12,7 +12,7 @@ public:
 
 	CtaOutputAssignment() : devOutputOffset(NULL) {}
 
-	int setup() {
+	int setup(SizeType startOffset) {
 
 		cudaError_t retVal;
 
@@ -21,8 +21,7 @@ public:
 			return -1;
 		}
 
-		SizeType outputOffset = 0;
-		if(retVal = cudaMemcpy(devOutputOffset, &outputOffset, sizeof(SizeType),
+		if(retVal = cudaMemcpy(devOutputOffset, &startOffset, sizeof(SizeType),
 						cudaMemcpyHostToDevice)) {
 			errorCuda(retVal);
 			return -1;
