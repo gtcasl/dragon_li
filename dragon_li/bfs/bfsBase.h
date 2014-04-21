@@ -52,7 +52,6 @@ public:
 	//Frontiers for bfs
 	SizeType maxFrontierSize;
 	SizeType frontierSize;
-	SizeType * devFrontierSize;
 	VertexIdType * devFrontierContract;
 	VertexIdType * devFrontierExpand;
 	bool frontierOverflow;
@@ -76,7 +75,6 @@ public:
 		devSearchDistance(NULL),
 		maxFrontierSize(0),
 		frontierSize(0),
-		devFrontierSize(NULL),
 		devFrontierContract(NULL),
 		devFrontierExpand(NULL),
 		frontierOverflow(false),
@@ -136,18 +134,14 @@ public:
 			return -1;
 		}
 
-		if(retVal = cudaMalloc(&devFrontierSize, sizeof(SizeType))) {
+		report("MaxFrontierSize " << maxFrontierSize);
+		if(retVal = cudaMalloc(&devFrontierContract, maxFrontierSize * sizeof(VertexIdType))) {
 			errorCuda(retVal);
 			return -1;
 		}
 
 		frontierSize = 1; //always start with one vertex in frontier
 
-		report("MaxFrontierSize " << maxFrontierSize);
-		if(retVal = cudaMalloc(&devFrontierContract, maxFrontierSize * sizeof(VertexIdType))) {
-			errorCuda(retVal);
-			return -1;
-		}
 		VertexIdType startVertexId = 0; //always expand from id 0
 		if(retVal = cudaMemcpy(devFrontierContract, &startVertexId, sizeof(VertexIdType),
 						cudaMemcpyHostToDevice)) {

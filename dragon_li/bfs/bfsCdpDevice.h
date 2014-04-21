@@ -1,6 +1,8 @@
 #pragma once
 
-#include <dragon_li/bfs/bfsRegDevice.h>
+#include <dragon_li/util/ctaOutputAssignment.h>
+#include <dragon_li/util/ctaWorkAssignment.h>
+
 #include <dragon_li/bfs/bfsCdpThread.h>
 
 #undef REPORT_BASE
@@ -19,8 +21,7 @@ class BfsCdpDevice {
 	static const SizeType CTAS = Settings::CTAS;
 
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
-	typedef typename BfsRegDevice< Settings >::CtaWorkAssignment CtaWorkAssignment;
-
+	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
 public:
 
 	static __device__ void bfsCdpCtaExpand(

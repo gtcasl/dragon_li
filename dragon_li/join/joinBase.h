@@ -46,7 +46,32 @@ public:
 
 	virtual int setup(JoinData<Types> joinData) {
 
-		cudaMalloc(&devJoininputLeft
+		inputCountLeft = joinData.inputCountLeft;
+		inputCountRight = joinData.inputCountRight;
+
+		cudaError_t retVal;
+
+		if(retVal = cudaMalloc(&devJoininputLeft, inputCountLeft * sizeof(DataType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(retVal = cudaMemcpy(devJoinInputLeft, 
+								joinData.inputLeft, 
+								inputCountLeft * sizeof(DataType),
+								cudaMemcpyHostToDevice))
+			return -1;
+		}
+		if(retVal = cudaMalloc(&devJoininputRight, inputCountRight * sizeof(DataType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(retVal = cudaMemcpy(devJoinInputRight, 
+								joinData.inputRight, 
+								inputCountRight * sizeof(DataType),
+								cudaMemcpyHostToDevice))
+			return -1;
+		}
+
 		return 0;
 	}
 

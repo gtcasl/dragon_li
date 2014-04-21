@@ -2,6 +2,7 @@
 
 #include <dragon_li/util/primitive.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
+#include <dragon_li/util/ctaWorkAssignment.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -19,31 +20,9 @@ class BfsRegDevice {
 	static const SizeType CTAS = Settings::CTAS;
 
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
+	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
 
 public:
-	class CtaWorkAssignment {
-	public:
-		SizeType totalWorkSize;
-		SizeType workOffset;
-		SizeType workSize;
-
-		__device__ CtaWorkAssignment(SizeType _totalWorkSize) : 
-			totalWorkSize(_totalWorkSize),
-			workOffset(-1),
-			workSize(0) {}
-
-		__device__ void getCtaWorkAssignment() {
-			SizeType totalThreads = THREADS * CTAS;
-			if(workOffset == -1) { //first time
-				workOffset = min(blockIdx.x * THREADS, totalWorkSize);
-			}
-			else {
-				workOffset = min(workOffset + totalThreads, totalWorkSize);
-			}
-			workSize = min(THREADS, totalWorkSize - workOffset);
-		}
-	};
-
 	static __device__ void bfsRegCtaExpand(
 		CtaWorkAssignment &ctaWorkAssignment,
 		VertexIdType * devColumnIndices,

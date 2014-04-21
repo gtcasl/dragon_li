@@ -13,9 +13,10 @@ int random(DataType * data,
 			DataType rangeEnd) {
 
 	errorMsg("Not implemented");
+	return -1;
 }
 
-template<typename int, typename SizeType>
+template<int, typename SizeType>
 int random(int * data, 
 			SizeType count,
 			int rangeStart,
@@ -28,4 +29,9 @@ int random(int * data,
 
 	}
 
+	return 0;
+
+}
+
+}
 }
