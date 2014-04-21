@@ -42,6 +42,7 @@ public:
 	SizeType maxGridDataSize;
 	SizeType maxRefineLevel;
 	SizeType activeGridSize;
+	bool gridSizeOverflow;
 
 	DataType * devGridData;
 	SizeType * devGridPointer;
@@ -55,6 +56,7 @@ public:
 			maxGridDataSize(0),
 			maxRefineLevel(0),
 			activeGridSize(0),
+			gridSizeOverflow(false),
 			devGridData(NULL),
 			devGridPointer(NULL) {}
 
