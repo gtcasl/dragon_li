@@ -71,28 +71,30 @@ public:
 		if(rowLength >= Settings::CDP_THRESHOLD) { //call cdp kernel
 
 			SizeType CDP_THREADS = Settings::CDP_THREADS;
-			SizeType cdpCtas = (rowLength + CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
+			SizeType cdpCtas = rowLength >> Settings::CDP_THREADS_BITS;
 
+			cudaStream_t s;
+			cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
 			bfsCdpThreadExpandKernel<Settings>
-				<<< cdpCtas, CDP_THREADS >>> (
+				<<< cdpCtas, CDP_THREADS, 0, s>>> (
 					rowOffset,
 					rowLength,
 					devColumnIndices,
 					devFrontierExpand,
-					globalOffset,
-					localOffset);
+					globalOffset + localOffset);
 
 
 			checkErrorDevice();
 
-			rowLength = 0;
+			rowLength -= (CDP_THREADS * cdpCtas);
+			rowOffset += (CDP_THREADS * cdpCtas);
+			localOffset += (CDP_THREADS * cdpCtas);
 		}
-
 
 		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
 			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
 			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
-//			reportDevice("%d.%d, neighborid %d, outputoffset %d", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
+			reportDevice("%d.%d, neighborid %d, outputoffset %d", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
 		}
 		
 	}

@@ -12,8 +12,7 @@ __global__ void bfsCdpThreadExpandKernel(
 	typename Settings::SizeType rowLength,
 	typename Settings::VertexIdType * devColumnIndices,
 	typename Settings::VertexIdType * devFrontierExpand,
-	typename Settings::SizeType globalOffset,
-	typename Settings::SizeType localOffset) {
+	typename Settings::SizeType outputOffset) {
 		
 	typedef typename Settings::SizeType SizeType;
 	typedef typename Settings::VertexIdType VertexIdType;
@@ -22,11 +21,10 @@ __global__ void bfsCdpThreadExpandKernel(
 	if(columnId < rowLength) {
 
 		VertexIdType expandedVertex = devColumnIndices[rowOffset + columnId];
-		SizeType outputOffset = globalOffset + localOffset + columnId;
-		devFrontierExpand[outputOffset]	= expandedVertex;
+		devFrontierExpand[outputOffset + columnId]	= expandedVertex;
 
 		reportDevice("CDP %d.%d: vertex %d, outputoffset %d", 
-			blockIdx.x, threadIdx.x, expandedVertex, outputOffset);
+			blockIdx.x, threadIdx.x, expandedVertex, outputOffset + columnId);
 	}
 }
 
