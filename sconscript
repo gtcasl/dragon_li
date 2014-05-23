@@ -45,15 +45,17 @@ for dirname in hydrazine_dirs:
 hydrazine_lib = env.StaticLibrary('libhydrazine', hydrazine_src, LIBS=['-lrt'])
 
 NVCC = '/usr/local/cuda/bin/nvcc'
-NVCCFLAGS = '-arch=sm_35 -m64 -O3'
+NVCCFLAGS = '-m64 -O3'
 NVCCPATH = ['.']
 
-env.Append(BUILDERS = {'Cuda' : Builder(
-	action = NVCC + ' -I. ' + NVCCFLAGS + ' $SOURCE -o $TARGET $LIBS ' + env['_CPPDEFFLAGS'],
+env.Append(BUILDERS = {
+'Cuda' : Builder(
+	action = NVCC + ' -I. -I/usr/local/cuda/extras/CUPTI/include -arch=sm_20 ' 
+		+ NVCCFLAGS + ' -rdc=true $SOURCE -o $TARGET $LIBS ' + env['_CPPDEFFLAGS'],
 	src_suffix = '.cu'
 ),
 'Cuda_35' : Builder(
-	action = NVCC + ' -I. -I/usr/local/cuda/extras/CUPTI/include -L/usr/local/cuda/extras/CUPTI/lib64 ' 
+	action = NVCC + ' -I. -I/usr/local/cuda/extras/CUPTI/include -L/usr/local/cuda/extras/CUPTI/lib64 -arch=sm_35 ' 
 		+ NVCCFLAGS + ' -rdc=true $SOURCE -o $TARGET $LIBS ' + env['_CPPDEFFLAGS'],
 	src_suffix = '.cu'
 )})
@@ -83,7 +85,14 @@ for app in dragon_li_src:
 	appname = os.path.splitext(appfile)[0]
 #	mappedApp = env.Cuda(app)
 #	env.Depends(mappedApp, dragon_li_header)
-	buildApp = env.Cuda_35(os.path.join('bin', appname), app, LIBS = [hydrazine_lib, '-lcudart', '-lcudadevrt', '-lcuda', '-lcupti'])
+#	buildApp = env.Cuda_35(os.path.join('bin', appname), app, 
+	buildApp = env.Cuda(os.path.join('bin', appname), app, 
+			LIBS = [hydrazine_lib, 
+				'-lcudart', 
+				'-lcudadevrt', 
+				'-lcuda', 
+				#'-lcupti'
+				])
 	env.Depends(buildApp, [dragon_li_header, hydrazine_lib])
 	env.Install(dragon_li_install, [buildApp])
 

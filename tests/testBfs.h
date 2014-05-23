@@ -116,30 +116,30 @@ int testBfs(int argc, char **argv) {
 			return -1;
 	}
 	else {
-		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
-		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
-														verbose,
-														veryVerbose,
-														frontierScaleFactor);
-	
-		if(bfsCdp.setup(graphDev, bfsCdpConfig))
-			return -1;
-	
-		if(bfsCdp.search())
-			return -1;
-	
-		if(verify) {
-			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
-			if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
-				std::cout << "Verify correct!\n";
-			}
-			else {
-				std::cout << "Incorrect!\n";
-			}
-		}
-	
-		if(bfsCdp.displayResult())
-			return -1;
+//		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
+//		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
+//														verbose,
+//														veryVerbose,
+//														frontierScaleFactor);
+//	
+//		if(bfsCdp.setup(graphDev, bfsCdpConfig))
+//			return -1;
+//	
+//		if(bfsCdp.search())
+//			return -1;
+//	
+//		if(verify) {
+//			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+//			if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+//				std::cout << "Verify correct!\n";
+//			}
+//			else {
+//				std::cout << "Incorrect!\n";
+//			}
+//		}
+//	
+//		if(bfsCdp.displayResult())
+//			return -1;
 	}
 
 
