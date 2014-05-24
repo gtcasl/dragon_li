@@ -15,10 +15,24 @@ public:
 	typedef typename Settings::SizeType SizeType;
 	typedef typename Settings::DataType DataType;
 
+	class UserConfig : public dragon_li::util::UserConfig {
+	public:
+		SizeType joinEstOutScaleFactor;
+
+		UserConfig(
+			bool _verbose,
+			bool _veryVerbose,
+			SizeType _joinEstOutScaleFactor) :
+				dragon_li::util::UserConfig(_verbose, _veryVerbose),
+				joinEstOutScaleFactor(_joinEstOutScaleFactor) {}
+	};
+
+
 
 	//User control
 	bool verbose;
 	bool veryVerbose;
+	SizeType joinEstOutScaleFactor;
 
 	//Join information
 	SizeType inputCountLeft;
@@ -34,6 +48,7 @@ public:
 	JoinBase() : 
 		verbose(false),
 		veryVerbose(false),
+		joinEstOutScaleFactor(0),
 		inputCountLeft(0),
 		inputCountRight(0),
 		outputCount(0),
@@ -44,7 +59,12 @@ public:
 
 	virtual int join() = 0;
 
-	virtual int setup(JoinData<Types> joinData) {
+	virtual int setup(JoinData<Types> joinData,
+					UserConfig & userConfig) {
+
+		verbose = userConfig.verbose;
+		veryVerbose = userConfig.veryVerbose;
+		joinEstOutScaleFactor = userConfig.joinEstOutScaleFactor;
 
 		inputCountLeft = joinData.inputCountLeft;
 		inputCountRight = joinData.inputCountRight;
