@@ -5,6 +5,7 @@
 #include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/join/joinBase.h>
 #include <dragon_li/join/joinRegDevice.h>
+#include <dragon_li/join/joinData.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 1 
@@ -41,7 +42,11 @@ public:
 		devJoinOutputScattered(NULL),
 		estJoinOutCount(0) {}
 
-	int findBound() {
+	int setup(JoinData<Types> joinData,
+				JoinBase<Settings>::UserConfig & userConfig) {
+
+		//call setup from base class
+		JoinBase::Setings<Types>::setup(joinData, userConfig);
 	
 		if(retVal = cudaMalloc(&devLowerBounds, CTAS * sizeof(SizeType))) {
 			errorCuda(retVal);
@@ -74,8 +79,29 @@ public:
 		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
 			(devJoinOutputScattered, 0, estJoinOutCount))
 			return -1;
-			
+	
+	}
 
+	int findBounds() {
+		
+		joinRegFindBoundsKernel< Settings >
+			<<< CTAS, THREADS>>> (
+			this->devJoinInputLeft,
+			this->inputCountLeft,
+			this->devJoinInputRight,
+			this->inputCountRight,
+			devLowerBounds,
+			devUpperBounds,
+			devOutBounds
+		);
+
+		cudaError_t retVal;
+		if(retVal = cudaDeviceSynchronize()) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		return 0;
 		
 	}
 

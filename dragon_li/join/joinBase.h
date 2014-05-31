@@ -1,5 +1,8 @@
 #pragma once
 
+#include <dragon_li/util/userConfig.h>
+#include <dragon_li/join/joinData.h>
+
 #undef REPORT_BASE
 #define REPORT_BASE
 
