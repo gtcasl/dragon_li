@@ -79,6 +79,8 @@ public:
 		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
 			(devJoinOutputScattered, 0, estJoinOutCount))
 			return -1;
+
+		JoinRegDevice::joinBlockEstOutScaleFactor = this->joinBlockEstOutScaleFactor;
 	
 	}
 

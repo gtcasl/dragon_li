@@ -4,6 +4,8 @@ import os
 
 vars = Variables()
 vars.Add('no_debug', 'Set to 1 to deactive debug information', 0)
+vars.Add('cdp', 'Set to 1 to activate CDP support', 0)
+vars.Add('sm20', 'Set to 1 to run on sm20 arch', 0)
 
 env = Environment(variables = vars)
 Help(vars.GenerateHelpText(env))

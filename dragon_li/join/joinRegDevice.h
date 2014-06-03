@@ -21,8 +21,28 @@ class JoinRegDevice {
 
 public:
 
+	static SizeType joinBlockEstOutScaleFactor;  
+
+	static __device__ int joinRegThreadFindLowerBound(
+		DataType key,
+		DataType * data,
+		DataType * dataCount
+	) {
+		SizeType low = 0;
+		SizeType high = dataCount;
+
+		SizeType mid = low + (high - low) / 2;
+		if(begin[mid] < key)
+			low = mid + 1;
+		else
+			high = mid;
+
+		return low;
+	}
+
 	static __device__ void joinRegThreadFindBounds(
 		threadWorkAssignment & threadWorkAssignment,
+		SizeType partitionSize,
 		DataType * devJoinInputLeft,
 		SizeType inputCountLeft,
 		DataType * devJoinInputRight,
@@ -35,8 +55,34 @@ public:
 		if(workSize == 0)
 			return;
 
+		SizeType partitionId = threadWorkAssignment.workOffset;
+		SizeType leftStart = min(partitionSize * partitionId, inputCountLeft);
+		SizeType leftEnd = min(partitionSize * (partitionId + 1), inputCountLeft);
+
+		if(leftStart < leftEnd) {
 			
-		
+			DataType lowerKey = devJoinInputLeft[leftStart];
+			SizeType lowerBound = joinRegThreadFindLowerBound(
+						lowerKey,
+						devJoinInputRight,
+						inputCountRight);
+
+			devLowerBounds[partitionId] = lowerBound;
+
+			DataType upperKey = devJoinInputLeft[leftEnd - 1];
+			SizeType upperBound = joinREgThreadFindUpperBound(
+						upperkey,
+						devJoinInputRight,
+						inputCountRight);
+			devUpperBounds[partitionId] = upperBound;
+			devOutBounds[partitionId] = max(upperBounds - lowerBound, leftEnd - leftStart) * joinBlockEstOutScaleFactor;
+		}
+		else {
+			//out of bound
+			devLowerBounds[partitionId] = inputCountRight;
+			devUpperBounds[partitionId] = inputCountRight;
+			devOutBounds[partitionId] = 0;
+		}
 	}
 
 	static __device__ void joinRegFindBoundsKernel(
@@ -59,6 +105,7 @@ public:
 
 			joinRegThreadFindBound(
 				threadWorkAssignment,
+				partitionSize,
 				devJoinInputLeft,
 				inputCountLeft,
 				devJoinInputRight,

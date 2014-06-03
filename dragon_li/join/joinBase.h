@@ -21,13 +21,16 @@ public:
 	class UserConfig : public dragon_li::util::UserConfig {
 	public:
 		SizeType joinEstOutScaleFactor;
+		SizeType joinBlockEstOutScaleFactor;
 
 		UserConfig(
 			bool _verbose,
 			bool _veryVerbose,
-			SizeType _joinEstOutScaleFactor) :
+			SizeType _joinEstOutScaleFactor,
+			SizeType _joinBlockEstOutScaleFactor) :
 				dragon_li::util::UserConfig(_verbose, _veryVerbose),
-				joinEstOutScaleFactor(_joinEstOutScaleFactor) {}
+				joinEstOutScaleFactor(_joinEstOutScaleFactor),
+				joinBlockEstOutScaleFactor(_joinBlockEstOutScaleFactor) {}
 	};
 
 
@@ -36,6 +39,7 @@ public:
 	bool verbose;
 	bool veryVerbose;
 	SizeType joinEstOutScaleFactor;
+	SizeType joinBlockEstOutScaleFactor;
 
 	//Join information
 	SizeType inputCountLeft;
@@ -68,6 +72,7 @@ public:
 		verbose = userConfig.verbose;
 		veryVerbose = userConfig.veryVerbose;
 		joinEstOutScaleFactor = userConfig.joinEstOutScaleFactor;
+		joinBlockEstOutScaleFactor = userConfig.joinBlockEstOutScaleFactor;
 
 		inputCountLeft = joinData.inputCountLeft;
 		inputCountRight = joinData.inputCountRight;
