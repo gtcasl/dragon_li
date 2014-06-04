@@ -1,3 +1,4 @@
+#ifdef ENABLE_CDP
 #pragma once
 
 #include <dragon_li/bfs/bfsReg.h>
@@ -49,3 +50,4 @@ public:
 
 }
 }
+#endif

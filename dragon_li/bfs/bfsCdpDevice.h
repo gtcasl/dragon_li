@@ -1,3 +1,4 @@
+#ifdef ENABLE_CDP
 #pragma once
 
 #include <dragon_li/util/ctaOutputAssignment.h>
@@ -162,3 +163,4 @@ __global__ void bfsCdpExpandKernel(
 
 }
 }
+#endif

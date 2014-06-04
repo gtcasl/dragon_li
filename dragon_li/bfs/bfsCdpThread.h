@@ -1,3 +1,4 @@
+#ifdef ENABLE_CDP
 #pragma once
 
 #undef REPORT_BASE
@@ -30,3 +31,4 @@ __global__ void bfsCdpThreadExpandKernel(
 
 }
 }
+#endif

@@ -11,8 +11,8 @@
 #include <dragon_li/bfs/types.h>
 #include <dragon_li/bfs/settings.h>
 #include <dragon_li/bfs/bfsReg.h>
-#include <dragon_li/bfs/bfsCdp.h>
 #include <dragon_li/bfs/bfsCpu.h>
+#include <dragon_li/bfs/bfsCdp.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -115,33 +115,35 @@ int testBfs(int argc, char **argv) {
 		if(bfsReg.displayResult())
 			return -1;
 	}
-	else {
-//		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
-//		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
-//														verbose,
-//														veryVerbose,
-//														frontierScaleFactor);
-//	
-//		if(bfsCdp.setup(graphDev, bfsCdpConfig))
-//			return -1;
-//	
-//		if(bfsCdp.search())
-//			return -1;
-//	
-//		if(verify) {
-//			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
-//			if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
-//		}
-//	
-//		if(bfsCdp.displayResult())
-//			return -1;
-	}
 
+#ifdef ENABLE_CDP
+	else {
+		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
+		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
+														verbose,
+														veryVerbose,
+														frontierScaleFactor);
+	
+		if(bfsCdp.setup(graphDev, bfsCdpConfig))
+			return -1;
+	
+		if(bfsCdp.search())
+			return -1;
+	
+		if(verify) {
+			dragon_li::bfs::BfsCpu<Types>::bfsCpu(graph);
+			if(!bfsCdp.verifyResult(dragon_li::bfs::BfsCpu<Types>::cpuSearchDistance)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
+	
+		if(bfsCdp.displayResult())
+			return -1;
+	}
+#endif
 
 	return 0;
 }

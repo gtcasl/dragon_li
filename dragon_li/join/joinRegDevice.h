@@ -117,6 +117,32 @@ public:
 		}
 	}
 
+	static __device__ void joinRegMainJoinKernel(
+		DataType * devJoinInputLeft,
+		SizeType inputCountLeft,
+		DataType * devJoinInputRight,
+		SizeType inputCountRight,
+		SizeType * devJoinLeftOutIndicesScattered,
+		SizeType * devJoinRightOutIndicesScattered,
+		SizeType * devHistogram,
+		SizeType * devLowerBounds,
+		SizeType * devUpperBounds,
+		SizeType * devOutBounds
+	) {
+	}
+
+	static __device__ void joinRegGatherKernel(
+		SizeType * devJoinLeftOutIndices,
+		SizeType * devJoinRightOutIndices,
+		SizeType * devJoinLeftOutIndicesScattered,
+		SizeType * devJoinRightOutIndicesScattered,
+		SizeType * estJoinOutCount,
+		SizeType * devOutBounds,
+		SizeType * devHistogram,
+		SizeType devJoinOutputCount
+	) {
+	}
+
 };
 
 template< typename Settings >
@@ -138,6 +164,58 @@ __global__ void joinRegFindBoundsKernel(
 			devLowerBounds,
 			devUpperBounds,
 			devOutBounds
+	);
+
+
+}
+
+template< typename Settings >
+__global__ void joinRegMainJoinKernel(
+	typename Settings::DataType * devJoinInputLeft,
+	typename Settings::SizeType inputCountLeft,
+	typename Settings::DataType * devJoinInputRight,
+	typename Settings::SizeType inputCountRight,
+	typename Settings::SizeType * devJoinLeftOutIndicesScattered,
+	typename Settings::SizeType * devJoinRightOutIndicesScattered,
+	typename Settings::SizeType * devHistogram,
+	typename Settings::SizeType * devLowerBounds,
+	typename Settings::SizeType * devUpperBounds,
+	typename Settings::SizeType * devOutBounds
+	) {
+
+	JoinRegDevice< Settings >::joinRegMainJoinKernel(
+		devJoinInputLeft,
+		inputCountLeft,
+		devJoinInputRight,
+		inputCountRight,
+		devJoinLeftOutIndicesScattered,
+		devJoinRightOutIndicesScattered,
+		devHistogram,
+		devLowerBounds,
+		devUpperBounds,
+		devOutBounds);
+}
+
+template< typename Settings >
+__global__ void joinRegGatherKernel(
+	typename Settings::SizeType * devJoinLeftOutIndices,
+	typename Settings::SizeType * devJoinRightOutIndices,
+	typename Settings::SizeType * devJoinLeftOutIndicesScattered,
+	typename Settings::SizeType * devJoinRightOutIndicesScattered,
+	typename Settings::SizeType * estJoinOutCount,
+	typename Settings::SizeType * devOutBounds,
+	typename Settings::SizeType * devHistogram,
+	typename Settings::SizeType devJoinOutputCount
+	) {
+	JoinRegDevice< Settings >::joinRegGatherKernel (
+		devJoinLeftOutIndices,
+		devJoinRightOutIndices,
+		devJoinLeftOutIndicesScattered,
+		devJoinRightOutIndicesScattered,
+		estJoinOutCount,
+		devOutBounds,
+		devHistogram,
+		devJoinOutputCount
 	);
 
 

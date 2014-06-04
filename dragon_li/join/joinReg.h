@@ -15,7 +15,8 @@ namespace join {
 
 template< typename Settings >
 class JoinReg : public JoinBase< Settings > {
-
+	
+	typedef typename Settings::Types Types;
 	typedef typename Settings::SizeType SizeType;
 	typedef typename Settings::DataType DataType;
 
@@ -29,7 +30,8 @@ public:
 	SizeType *devUpperBounds;
 	SizeType *devOutBounds;
 	SizeType *devHistogram;
-	SizeType *devJoinOutputScattered;
+	SizeType *devJoinLeftOutIndicesScattered;
+	SizeType *devJoinRightOutIndicesScattered;
 	
 	SizeType estJoinOutCount;
 
@@ -39,11 +41,12 @@ public:
 		devUpperBounds(NULL),
 		devOutBounds(NULL),
 		devHistogram(NULL),
-		devJoinOutputScattered(NULL),
+		devJoinLeftOutIndicesScattered(NULL),
+		devJoinRightOutIndicesScattered(NULL),
 		estJoinOutCount(0) {}
 
 	int setup(JoinData<Types> joinData,
-				JoinBase<Settings>::UserConfig & userConfig) {
+				typename JoinBase<Settings>::UserConfig & userConfig) {
 
 		//call setup from base class
 		JoinBase::Setings<Types>::setup(joinData, userConfig);
@@ -70,14 +73,22 @@ public:
 
 		estJoinOutCount = std::max(this->inputCountLeft, this->inputCountRight) * this->joinEstOutScaleFactor; 
 
-		if(retVal = cudaMalloc(&devJoinOutputScattered, estJoinOutCount * sizeof(DataType))) {
+		if(retVal = cudaMalloc(&devJoinLeftOutIndicesScattered, estJoinOutCount * sizeof(DataType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(retVal = cudaMalloc(&devJoinRightOutIndicesScattered, estJoinOutCount * sizeof(DataType))) {
 			errorCuda(retVal);
 			return -1;
 		}
 
 
 		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
-			(devJoinOutputScattered, 0, estJoinOutCount))
+			(devJoinLeftOutIndicesScattered, 0, estJoinOutCount))
+			return -1;
+
+		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
+			(devJoinRightOutIndicesScattered, 0, estJoinOutCount))
 			return -1;
 
 		JoinRegDevice::joinBlockEstOutScaleFactor = this->joinBlockEstOutScaleFactor;
@@ -102,9 +113,66 @@ public:
 			errorCuda(retVal);
 			return -1;
 		}
+		
+		if(prefixScan(devOutBounds, CTAS + 1)) {
+			errorMsg("Prefix Sum for outBounds fails");
+			return -1;
+		}
 
 		return 0;
 		
+	}
+
+	int mainJoin() {
+
+		joinRegMainJoinKernel< Settings >
+			<<< CTAS, THREADS >>> (
+				this->devJoinInputLeft,
+				this->inputCountLeft,
+				this->devJoinInputRight,
+				this->inputCountRight,
+				devJoinLeftOutIndicesScattered,
+				devJoinRightOutIndicesScattered,
+				devHistogram,
+				devLowerBounds,
+				devUpperBounds,
+				devOutBounds);
+
+		cudaError_t retVal;
+		if(retVal = cudaDeviceSynchronize()) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		return 0;
+	}
+
+	int gather() {
+
+		if(prefixScan(devHistogram, CTAS + 1)) {
+			errorMsg("Prefix Sum for histogram fails");
+			return -1;
+		}
+
+		joinRegGatherKernel< Settings >
+			<<< CTAS, THREADS >>> (
+				this->devJoinLeftOutIndices,
+				this->devJoinRightOutIndices,
+				devJoinLeftOutIndicesScattered,
+				devJoinRightOutIndicesScattered,
+				estJoinOutCount,
+				devOutBounds,
+				devHistogram,
+				this->devJoinOutputCount
+			);
+
+		cudaError_t retVal;
+		if(retVal = cudaDeviceSynchronize()) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		return 0;
 	}
 
 	int join() {

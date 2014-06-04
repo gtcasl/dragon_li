@@ -1,6 +1,8 @@
 #pragma once
 
+
 #include <dragon_li/util/userConfig.h>
+#include <dragon_li/util/debug.h>
 #include <dragon_li/join/joinData.h>
 
 #undef REPORT_BASE
@@ -49,7 +51,8 @@ public:
 	//Join Device information
 	DataType * devJoinInputLeft;
 	DataType * devJoinInputRight;
-	DataType * devJoinOutput;
+	SizeType * devJoinLeftOutIndices;
+	DataType * devJoinRightOutIndices;
 	SizeType * devJoinOutputCount;
 
 	JoinBase() : 
@@ -59,9 +62,10 @@ public:
 		inputCountLeft(0),
 		inputCountRight(0),
 		outputCount(0),
-		devjoinInputLeft(NULL),
+		devJoinInputLeft(NULL),
 		devJoinInputRight(NULL),
-		devJoinOutput(NULL),
+		devJoinLeftOutIndices(NULL),
+		devJoinRightOutIndices(NULL),
 		devJoinOutputCount(NULL) {}
 
 	virtual int join() = 0;
@@ -79,24 +83,26 @@ public:
 
 		cudaError_t retVal;
 
-		if(retVal = cudaMalloc(&devJoininputLeft, inputCountLeft * sizeof(DataType))) {
+		if(retVal = cudaMalloc(&devJoinInputLeft, inputCountLeft * sizeof(DataType))) {
 			errorCuda(retVal);
 			return -1;
 		}
 		if(retVal = cudaMemcpy(devJoinInputLeft, 
 								joinData.inputLeft, 
 								inputCountLeft * sizeof(DataType),
-								cudaMemcpyHostToDevice))
+								cudaMemcpyHostToDevice)) {
+			errorCuda(retVal);
 			return -1;
 		}
-		if(retVal = cudaMalloc(&devJoininputRight, inputCountRight * sizeof(DataType))) {
+		if(retVal = cudaMalloc(&devJoinInputRight, inputCountRight * sizeof(DataType))) {
 			errorCuda(retVal);
 			return -1;
 		}
 		if(retVal = cudaMemcpy(devJoinInputRight, 
 								joinData.inputRight, 
 								inputCountRight * sizeof(DataType),
-								cudaMemcpyHostToDevice))
+								cudaMemcpyHostToDevice)) {
+			errorCuda(retVal);
 			return -1;
 		}
 
@@ -112,4 +118,5 @@ public:
 	}
 };
 
+}
 }
