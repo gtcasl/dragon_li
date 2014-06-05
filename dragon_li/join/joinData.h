@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dragon_li/util/random.h>
+
 #undef REPORT_BASE
 #define REPORT_BASE
 
@@ -31,8 +33,8 @@ public:
 		inputLeft.resize(countLeft);
 		inputRight.resize(countRight);
 
-		dragon_li::util::random<DataType>(inputLeft, countLeft, 0, countLeft);
-		dragon_li::util::random<DataType>(inputRight, countRight, 0, countRight);
+		dragon_li::util::Random<DataType, SizeType>::random(inputLeft.data(), countLeft, 0, countLeft);
+		dragon_li::util::Random<DataType, SizeType>::random(inputRight.data(), countRight, 0, countRight);
 
 		return 0;
 

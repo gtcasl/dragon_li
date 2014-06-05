@@ -22,17 +22,13 @@ public:
 
 	class UserConfig : public dragon_li::util::UserConfig {
 	public:
-		SizeType joinEstOutScaleFactor;
-		SizeType joinBlockEstOutScaleFactor;
 
 		UserConfig(
 			bool _verbose,
-			bool _veryVerbose,
-			SizeType _joinEstOutScaleFactor,
-			SizeType _joinBlockEstOutScaleFactor) :
-				dragon_li::util::UserConfig(_verbose, _veryVerbose),
-				joinEstOutScaleFactor(_joinEstOutScaleFactor),
-				joinBlockEstOutScaleFactor(_joinBlockEstOutScaleFactor) {}
+			bool _veryVerbose
+			) :
+				dragon_li::util::UserConfig(_verbose, _veryVerbose)
+				{}
 	};
 
 
@@ -40,8 +36,6 @@ public:
 	//User control
 	bool verbose;
 	bool veryVerbose;
-	SizeType joinEstOutScaleFactor;
-	SizeType joinBlockEstOutScaleFactor;
 
 	//Join information
 	SizeType inputCountLeft;
@@ -58,7 +52,6 @@ public:
 	JoinBase() : 
 		verbose(false),
 		veryVerbose(false),
-		joinEstOutScaleFactor(0),
 		inputCountLeft(0),
 		inputCountRight(0),
 		outputCount(0),
@@ -75,8 +68,6 @@ public:
 
 		verbose = userConfig.verbose;
 		veryVerbose = userConfig.veryVerbose;
-		joinEstOutScaleFactor = userConfig.joinEstOutScaleFactor;
-		joinBlockEstOutScaleFactor = userConfig.joinBlockEstOutScaleFactor;
 
 		inputCountLeft = joinData.inputCountLeft;
 		inputCountRight = joinData.inputCountRight;
@@ -88,7 +79,7 @@ public:
 			return -1;
 		}
 		if(retVal = cudaMemcpy(devJoinInputLeft, 
-								joinData.inputLeft, 
+								joinData.inputLeft.data(), 
 								inputCountLeft * sizeof(DataType),
 								cudaMemcpyHostToDevice)) {
 			errorCuda(retVal);
@@ -99,7 +90,7 @@ public:
 			return -1;
 		}
 		if(retVal = cudaMemcpy(devJoinInputRight, 
-								joinData.inputRight, 
+								joinData.inputRight.data(), 
 								inputCountRight * sizeof(DataType),
 								cudaMemcpyHostToDevice)) {
 			errorCuda(retVal);

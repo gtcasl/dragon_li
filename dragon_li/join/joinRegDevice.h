@@ -16,32 +16,52 @@ class JoinRegDevice {
 
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
+	static const SizeType JOIN_BLOCK_SF = Settings::JOIN_BLOCK_SF;  
 
 	typedef typename dragon_li::util::ThreadWorkAssignment<Settings> ThreadWorkAssignment;
 
 public:
 
-	static SizeType joinBlockEstOutScaleFactor;  
 
 	static __device__ int joinRegThreadFindLowerBound(
 		DataType key,
 		DataType * data,
-		DataType * dataCount
+		SizeType dataCount
+	) {
+		SizeType low = 0;
+		SizeType high = dataCount;
+
+		while(low < high) {
+			SizeType mid = low + (high - low) / 2;
+			if(data[mid] < key)
+				low = mid + 1;
+			else
+				high = mid;
+		}
+
+		return low;
+	}
+
+	static __device__ int joinRegThreadFindUpperBound(
+		DataType key,
+		DataType * data,
+		SizeType dataCount
 	) {
 		SizeType low = 0;
 		SizeType high = dataCount;
 
 		SizeType mid = low + (high - low) / 2;
-		if(begin[mid] < key)
-			low = mid + 1;
-		else
+		if(key < data[mid])
 			high = mid;
+		else
+			low = mid + 1;
 
 		return low;
 	}
 
+
 	static __device__ void joinRegThreadFindBounds(
-		threadWorkAssignment & threadWorkAssignment,
+		ThreadWorkAssignment & threadWorkAssignment,
 		SizeType partitionSize,
 		DataType * devJoinInputLeft,
 		SizeType inputCountLeft,
@@ -52,7 +72,7 @@ public:
 		SizeType * devOutBounds
 	) {
 
-		if(workSize == 0)
+		if(threadWorkAssignment.workSize == 0)
 			return;
 
 		SizeType partitionId = threadWorkAssignment.workOffset;
@@ -70,12 +90,12 @@ public:
 			devLowerBounds[partitionId] = lowerBound;
 
 			DataType upperKey = devJoinInputLeft[leftEnd - 1];
-			SizeType upperBound = joinREgThreadFindUpperBound(
-						upperkey,
+			SizeType upperBound = joinRegThreadFindUpperBound(
+						upperKey,
 						devJoinInputRight,
 						inputCountRight);
 			devUpperBounds[partitionId] = upperBound;
-			devOutBounds[partitionId] = max(upperBounds - lowerBound, leftEnd - leftStart) * joinBlockEstOutScaleFactor;
+			devOutBounds[partitionId] = max(upperBound - lowerBound, leftEnd - leftStart) * JOIN_BLOCK_SF;
 		}
 		else {
 			//out of bound
@@ -103,7 +123,7 @@ public:
 		while(threadWorkAssignment.workOffset < partitions) {
 			threadWorkAssignment.getThreadWorkAssignment();
 
-			joinRegThreadFindBound(
+			joinRegThreadFindBounds(
 				threadWorkAssignment,
 				partitionSize,
 				devJoinInputLeft,
@@ -136,10 +156,10 @@ public:
 		SizeType * devJoinRightOutIndices,
 		SizeType * devJoinLeftOutIndicesScattered,
 		SizeType * devJoinRightOutIndicesScattered,
-		SizeType * estJoinOutCount,
+		SizeType estJoinOutCount,
 		SizeType * devOutBounds,
 		SizeType * devHistogram,
-		SizeType devJoinOutputCount
+		SizeType * devJoinOutputCount
 	) {
 	}
 
@@ -202,10 +222,10 @@ __global__ void joinRegGatherKernel(
 	typename Settings::SizeType * devJoinRightOutIndices,
 	typename Settings::SizeType * devJoinLeftOutIndicesScattered,
 	typename Settings::SizeType * devJoinRightOutIndicesScattered,
-	typename Settings::SizeType * estJoinOutCount,
+	typename Settings::SizeType estJoinOutCount,
 	typename Settings::SizeType * devOutBounds,
 	typename Settings::SizeType * devHistogram,
-	typename Settings::SizeType devJoinOutputCount
+	typename Settings::SizeType * devJoinOutputCount
 	) {
 	JoinRegDevice< Settings >::joinRegGatherKernel (
 		devJoinLeftOutIndices,

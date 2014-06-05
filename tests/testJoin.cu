@@ -35,7 +35,9 @@ int main(int argc, char **argv) {
 							> Types;
 	typedef dragon_li::join::Settings<
 				_Settings, 					//Basic Settings
-				Types						//Join Types
+				Types,						//Join Types
+				1000,
+				300
 				> Settings;
 
 	hydrazine::ArgumentParser parser(argc, argv);
@@ -53,11 +55,6 @@ int main(int argc, char **argv) {
 	bool cdp; //use CDP
 	parser.parse("", "--cdp", cdp, false, "Use Cuda Dynamic Parallelism");
 
-	Settings::SizeType joinEstOutScaleFactor;
-	parser.parse("", "--sf1", joinEstOutScaleFactor, 1000, "Scale Factor for estimated join output count");
-
-	Settings::SizeType joinBlockEstOutScaleFactor;
-	parser.parse("", "--sf2", joinBlockEstOutScaleFactor, 300, "Scale Factor for estimated join block output count"); 
 
 	Settings::SizeType inputLeftCount;
 	parser.parse("", "--leftCnt", inputLeftCount, 1024, "Left input element count");
@@ -72,9 +69,7 @@ int main(int argc, char **argv) {
 		dragon_li::join::JoinReg< Settings > joinReg;
 		dragon_li::join::JoinReg< Settings >::UserConfig joinRegConfig(
 														verbose,
-														veryVerbose,
-														joinEstOutScaleFactor,
-														joinBlockEstOutScaleFactor
+														veryVerbose
 														);
 	
 		dragon_li::join::JoinData< Types > joinData;

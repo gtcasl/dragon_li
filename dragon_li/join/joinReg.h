@@ -15,15 +15,14 @@ namespace join {
 
 template< typename Settings >
 class JoinReg : public JoinBase< Settings > {
-	
+
+public:
 	typedef typename Settings::Types Types;
 	typedef typename Settings::SizeType SizeType;
 	typedef typename Settings::DataType DataType;
 
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
-
-public:
 
 	//Processing temporary storage
 	SizeType *devLowerBounds;
@@ -49,7 +48,10 @@ public:
 				typename JoinBase<Settings>::UserConfig & userConfig) {
 
 		//call setup from base class
-		JoinBase::Setings<Types>::setup(joinData, userConfig);
+		if(JoinBase<Settings>::setup(joinData, userConfig))
+			return -1;
+
+		cudaError_t retVal;
 	
 		if(retVal = cudaMalloc(&devLowerBounds, CTAS * sizeof(SizeType))) {
 			errorCuda(retVal);
@@ -71,7 +73,7 @@ public:
 			return -1;
 		}
 
-		estJoinOutCount = std::max(this->inputCountLeft, this->inputCountRight) * this->joinEstOutScaleFactor; 
+		estJoinOutCount = std::max(this->inputCountLeft, this->inputCountRight) * Settings::JOIN_SF; 
 
 		if(retVal = cudaMalloc(&devJoinLeftOutIndicesScattered, estJoinOutCount * sizeof(DataType))) {
 			errorCuda(retVal);
@@ -91,8 +93,16 @@ public:
 			(devJoinRightOutIndicesScattered, 0, estJoinOutCount))
 			return -1;
 
-		JoinRegDevice::joinBlockEstOutScaleFactor = this->joinBlockEstOutScaleFactor;
+
+		return 0;
 	
+	}
+
+	int prefixScan(
+			SizeType * devInput,
+			SizeType inputSize) {
+
+		return 0;
 	}
 
 	int findBounds() {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dragon_li/util/debug.h>
+
 namespace dragon_li {
 namespace util {
 
