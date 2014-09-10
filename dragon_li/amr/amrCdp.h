@@ -28,6 +28,7 @@ public:
 					this->maxGridDataSize,
 					this->activeGridSize,
 					this->maxRefineLevel,
+					this->gridRefineThreshold,
 					this->ctaOutputAssignment
 				);
 		cudaError_t retVal;

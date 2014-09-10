@@ -3,33 +3,40 @@
 #include <dragon_li/util/ctaOutputAssignment.h>
 #include <dragon_li/util/ctaWorkAssignment.h>
 
+#include <dragon_li/amr/amrRegDevice.h>
 #include <dragon_li/amr/amrCdpThread.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 0
+#define REPORT_BASE 1
 
 namespace dragon_li {
 namespace amr {
 
-template< typename Settings >
+template< typename Settings,
+	bool ThreadLaunch = false>
 class AmrCdpDevice {
 
 	typedef typename Settings::DataType DataType;
 	typedef typename Settings::SizeType SizeType;
-	static const SizeType THREADS = Settings::THREADS;
+	static const SizeType THREADS = ThreadLaunch ? Settings::CDP_THREADS : Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
+	static const SizeType GRID_REFINE_SIZE = Settings::GRID_REFINE_SIZE;
 
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
 	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
 public:
 
 	static __device__ void amrCdpCtaRefine(
+		CtaWorkAssignment & ctaWorkAssignment,
 		DataType * devGridData,
 		SizeType * devGridPointer,
+		SizeType processGridOffset,
 		SizeType maxGridDataSize,
 		SizeType maxRefineLevel,
-		CtaOutputAssignment ctaOutputAssignment,
-		SizeType refineLevel) {
+		SizeType refineLevel,
+		DataType gridRefineThreshold,
+		CtaOutputAssignment & ctaOutputAssignment
+		) {
 
 		DataType * devGridDataStart = devGridData + processGridOffset;
 		SizeType * devGridPointerStart = devGridPointer + processGridOffset;
@@ -48,11 +55,12 @@ public:
 				if(gridData >= gridRefineThreshold) {
 					refineSize = GRID_REFINE_SIZE; 
 				}
+			//	reportDevice("threshod %f, %f, %d\n", gridRefineThreshold, gridData, refineSize);
 
 			}
 		}
 
-		SizeType totalRefineSize;
+		SizeType totalRefineSize = 0;
 		SizeType localOffset; //output offset within cta
 		localOffset = dragon_li::util::prefixSumCta<THREADS, SizeType>(refineSize, 
 				totalRefineSize);
@@ -72,54 +80,67 @@ public:
 		DataType energy = 0;
 		if(refineSize > 0) {
 			devGridPointerStart[threadWorkOffset] = globalOffset + localOffset; //point to child cells
-			energy = computeEnergy(gridData);
+			energy = AmrRegDevice<Settings>::computeEnergy(gridData);
 		}
 
 
 		refineLevel++;
 		if(refineLevel < maxRefineLevel) {
 
-			SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
-			amrCdpThreadRefineKernel
-				<<< cdpCtas, CDP_THREADS >>> (
-					refineSize,
-					devGridData,
-					devGridPointer,
-					energy,
-					maxGridDataSize,
-					maxRefineLevel,
-					globalOffset + localOffset,
-					refineLevel + 1,
-					ctaOutputAssignment
-					);
-
+			if(refineSize > 0) {
+				//reportDevice("launch data %f, %d\n", gridData, refineSize);
+				SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
+				//reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
+				amrCdpThreadRefineKernel<Settings>
+					<<< cdpCtas, Settings::CDP_THREADS >>> (
+						refineSize,
+						devGridData,
+						devGridPointer,
+						energy,
+						maxGridDataSize,
+						maxRefineLevel,
+						gridRefineThreshold,
+						globalOffset + localOffset,
+						refineLevel,
+						ctaOutputAssignment
+						);
+				checkErrorDevice();
+				//reportDevice("End launch threshod %f, %d\n", gridData, refineSize);
+			}
 		}
 
 	}
-
-
+	
 	static __device__ void amrCdpRefineKernel(
 	DataType * devGridData,
 	SizeType * devGridPointer,
 	SizeType maxGridDataSize,
 	SizeType activeGridSize,
 	SizeType maxRefineLevel,
+	DataType gridRefineThreshold,
 	CtaOutputAssignment ctaOutputAssignment) {
 
 		SizeType refineLevel = 0;
 
-		CtaWorkAssignment ctaWorkAssignment(frontierSize);
+		CtaWorkAssignment ctaWorkAssignment(activeGridSize);
 
 
-		while(ctaWorkAssignment.workOffset < frontierSize) {
+		while(ctaWorkAssignment.workOffset < activeGridSize) {
 			ctaWorkAssignment.getCtaWorkAssignment();
 
-			amrCdpCtaRefine(
+			if(ctaWorkAssignment.workSize >  0) {
+				amrCdpCtaRefine(
+					ctaWorkAssignment,
 					devGridData,
 					devGridPointer,
+					0,
 					maxGridDataSize,
 					maxRefineLevel,
-					refineLevel);
+					refineLevel,
+					gridRefineThreshold,
+					ctaOutputAssignment
+					);
+			}
 		}
 
 
@@ -135,17 +156,20 @@ __global__ void amrCdpRefineKernel(
 	typename Settings::SizeType maxGridDataSize,
 	typename Settings::SizeType activeGridSize,
 	typename Settings::SizeType maxRefineLevel,
+	typename Settings::DataType gridRefineThreshold,
 	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment) {
 
 	AmrCdpDevice< Settings >::amrCdpRefineKernel(
-					devGridData,
-					devGridPointer,
-					maxGridDataSize,
-					activeGridSize,
-					maxRefineLevel,
-					ctaOutputAssignment);
+		devGridData,
+		devGridPointer,
+		maxGridDataSize,
+		activeGridSize,
+		maxRefineLevel,
+		gridRefineThreshold,
+		ctaOutputAssignment);
 
 }
+
 
 }
 }

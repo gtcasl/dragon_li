@@ -142,16 +142,17 @@ public:
 		while(ctaWorkAssignment.workOffset < frontierSize) {
 			ctaWorkAssignment.getCtaWorkAssignment();
 
-			bfsRegCtaExpand(
-				ctaWorkAssignment,
-				devColumnIndices,
-				devRowOffsets,
-				devSearchDistance,
-				devFrontierContract,
-				devFrontierExpand,
-				maxFrontierSize,
-				ctaOutputAssignment,
-				iteration);
+			if(ctaWorkAssignment.workSize > 0)
+				bfsRegCtaExpand(
+					ctaWorkAssignment,
+					devColumnIndices,
+					devRowOffsets,
+					devSearchDistance,
+					devFrontierContract,
+					devFrontierExpand,
+					maxFrontierSize,
+					ctaOutputAssignment,
+					iteration);
 		}
 
 
@@ -170,12 +171,13 @@ public:
 
 			ctaWorkAssignment.getCtaWorkAssignment();
 
-			bfsRegCtaContract(
-				ctaWorkAssignment,
-				devVisitedMasks,
-				devOriginalFrontier,
-				devContractedFrontier,
-				ctaOutputAssignment);
+			if(ctaWorkAssignment.workSize > 0)
+				bfsRegCtaContract(
+					ctaWorkAssignment,
+					devVisitedMasks,
+					devOriginalFrontier,
+					devContractedFrontier,
+					ctaOutputAssignment);
 
 		}
 

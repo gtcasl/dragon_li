@@ -4,7 +4,7 @@
 #include <dragon_li/amr/amrRegDevice.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 0
+#define REPORT_BASE 1
 
 namespace dragon_li {
 namespace amr {
