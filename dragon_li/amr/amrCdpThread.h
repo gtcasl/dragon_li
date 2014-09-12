@@ -14,118 +14,6 @@ template< typename Settings,
 	bool ThreadLaunch>
 class AmrCdpDevice;
 
-//template< typename Settings >
-//class AmrCdpThread {
-//	typedef typename Settings::DataType DataType;
-//	typedef typename Settings::SizeType SizeType;
-//	static const SizeType CDP_THREADS = Settings::CDP_THREADS;
-//	static const SizeType GRID_REFINE_SIZE = Settings::GRID_REFINE_SIZE;
-//
-//	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
-//	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
-//public:
-//
-//
-//	static __device__ void amrCdpThreadRefineKernel(
-//	SizeType refineSize,
-//	DataType * devGridData,
-//	SizeType * devGridPointer,
-//	DataType energy,
-//	SizeType maxGridDataSize,
-//	SizeType maxRefineLevel,
-//	DataType gridRefineThreshold,
-//	SizeType outputOffset,
-//	SizeType refineLevel,
-//	CtaOutputAssignment &ctaOutputAssignment) {
-//
-//		if(blockIdx.x == 0 && threadIdx.x == 0)
-//			reportDevice("level %d, offset %d\n", refineLevel, outputOffset);
-//		SizeType refineId = threadIdx.x + blockIdx.x * blockDim.x;
-//	
-//		if(refineId < refineSize) {
-//	
-//			DataType refineData = AmrRegDevice<Settings>::computeTemperature(energy, refineId); 
-//			devGridData[outputOffset + refineId] = refineData;
-//			//reportDevice("%d.%d, offset %d, data %f\n", blockIdx.x, threadIdx.x, outputOffset + refineId, refineData); 
-//	
-//		}
-//	
-//		reportDevice("thread = %d\n", CDP_THREADS);
-//		DataType * devGridDataStart = devGridData + outputOffset;
-//		SizeType * devGridPointerStart = devGridPointer + outputOffset;
-//		DataType gridData;
-//		SizeType gridPointer;
-//		//SizeType refineSize = 0;
-//
-//
-//		if(refineId < refineSize) {
-//			gridData = devGridDataStart[refineId];
-//			gridPointer = devGridPointerStart[refineId];
-//
-//			if(gridPointer == -1) { //Not processed
-//				devGridPointerStart[refineId] = -2; //processed
-//				if(gridData >= gridRefineThreshold) {
-//					refineSize = GRID_REFINE_SIZE; 
-//				}
-//				reportDevice("threshod %f, %f, %d\n", gridRefineThreshold, gridData, refineSize);
-//
-//			}
-//		}
-//
-//		SizeType totalRefineSize = 0;
-//		SizeType localOffset; //output offset within cta
-//		localOffset = dragon_li::util::prefixSumCta<CDP_THREADS, SizeType>(refineSize, 
-//				totalRefineSize);
-//			reportDevice("%d: self %d, offset %d, total %d\n", threadIdx.x, refineSize, localOffset, totalRefineSize);
-//
-//		__shared__ SizeType globalOffset;
-//
-//		if(threadIdx.x == 0 && totalRefineSize > 0) {
-//			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalRefineSize);
-//		}
-//
-//		__syncthreads();
-//
-//		if(ctaOutputAssignment.getGlobalSize() > maxGridDataSize) //overflow
-//			return;
-//
-//
-//		//DataType energy = 0;
-//		if(refineSize > 0) {
-//			devGridPointerStart[refineId] = globalOffset + localOffset; //point to child cells
-//			energy = AmrRegDevice<Settings>::computeEnergy(gridData);
-//		}
-//
-//
-//		refineLevel++;
-//		if(refineLevel < maxRefineLevel) {
-//
-//			if(refineSize > 0) {
-//				reportDevice("launch data %f, %d\n", gridData, refineSize);
-//				SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
-//				reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
-//				amrCdpThreadRefineKernel<Settings>
-//					<<< cdpCtas, Settings::CDP_THREADS >>> (
-//						refineSize,
-//						devGridData,
-//						devGridPointer,
-//						energy,
-//						maxGridDataSize,
-//						maxRefineLevel,
-//						gridRefineThreshold,
-//						globalOffset + localOffset,
-//						refineLevel,
-//						ctaOutputAssignment
-//						);
-////				checkErrorDevice();
-//				//reportDevice("End launch threshod %f, %d\n", gridData, refineSize);
-//			}
-//		}
-//		
-//
-//	}
-//};
-
 template< typename Settings >
 __global__ void amrCdpThreadRefineKernel(
 	typename Settings::SizeType processSize,
@@ -145,106 +33,89 @@ __global__ void amrCdpThreadRefineKernel(
 	const SizeType GRID_REFINE_SIZE = Settings::GRID_REFINE_SIZE;
 
 	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
-//	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
 
-
-//	AmrCdpThread< Settings >::amrCdpThreadRefineKernel(
-//		refineSize,
-//		devGridData,
-//		devGridPointer,
-//		energy,
-//		maxGridDataSize,
-//		maxRefineLevel,
-//		gridRefineThreshold,
-//		outputOffset,
-//		refineLevel,
-//		ctaOutputAssignment);
-
-//		if(blockIdx.x == 0 && threadIdx.x == 0)
-//			reportDevice("level %d, offset %d\n", refineLevel, outputOffset);
-		SizeType refineId = threadIdx.x + blockIdx.x * blockDim.x;
+	SizeType refineId = threadIdx.x + blockIdx.x * blockDim.x;
 	
-		if(refineId < processSize) {
-	
-			DataType refineData = AmrRegDevice<Settings>::computeTemperature(inputEnergy, refineId); 
-			devGridData[outputOffset + refineId] = refineData;
-			//reportDevice("%d.%d, offset %d, data %f\n", blockIdx.x, threadIdx.x, outputOffset + refineId, refineData); 
-	
-		}
-	
-		DataType * devGridDataStart = devGridData + outputOffset;
-		SizeType * devGridPointerStart = devGridPointer + outputOffset;
-		DataType gridData;
-		SizeType gridPointer;
-		SizeType refineSize = 0;
+	if(refineId < processSize) {
+
+		DataType refineData = AmrRegDevice<Settings>::computeTemperature(inputEnergy, refineId); 
+		devGridData[outputOffset + refineId] = refineData;
+		//reportDevice("%d.%d, offset %d, data %f\n", blockIdx.x, threadIdx.x, outputOffset + refineId, refineData); 
+
+	}
+
+	DataType * devGridDataStart = devGridData + outputOffset;
+	SizeType * devGridPointerStart = devGridPointer + outputOffset;
+	DataType gridData;
+	SizeType gridPointer;
+	SizeType refineSize = 0;
 
 
-		if(refineId < processSize) {
-			gridData = devGridDataStart[refineId];
-			gridPointer = devGridPointerStart[refineId];
+	if(refineId < processSize) {
+		gridData = devGridDataStart[refineId];
+		gridPointer = devGridPointerStart[refineId];
 
-			if(gridPointer == -1) { //Not processed
-				devGridPointerStart[refineId] = -2; //processed
-				if(gridData >= gridRefineThreshold) {
-					refineSize = GRID_REFINE_SIZE; 
-				}
-//				reportDevice("threshod %f, %f, %d\n", gridRefineThreshold, gridData, refineSize);
-
+		if(gridPointer == -1) { //Not processed
+			devGridPointerStart[refineId] = -2; //processed
+			if(gridData >= gridRefineThreshold) {
+				refineSize = GRID_REFINE_SIZE; 
 			}
+			//reportDevice("threshod %f, %f, %d\n", gridRefineThreshold, gridData, refineSize);
+
 		}
+	}
 
-		SizeType totalRefineSize = 0;
-		SizeType localOffset; //output offset within cta
-		localOffset = dragon_li::util::prefixSumCta<CDP_THREADS, SizeType>(refineSize, 
-				totalRefineSize);
-//			reportDevice("%d: self %d, offset %d, total %d\n", threadIdx.x, refineSize, localOffset, totalRefineSize);
+	SizeType totalRefineSize = 0;
+	SizeType localOffset; //output offset within cta
+	localOffset = dragon_li::util::prefixSumCta<CDP_THREADS, SizeType>(refineSize, 
+			totalRefineSize);
+		//reportDevice("%d: self %d, offset %d, total %d\n", threadIdx.x, refineSize, localOffset, totalRefineSize);
 
-		__shared__ SizeType globalOffset;
+	__shared__ SizeType globalOffset;
 
-		if(threadIdx.x == 0 && totalRefineSize > 0) {
-			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalRefineSize);
-		}
+	if(threadIdx.x == 0 && totalRefineSize > 0) {
+		globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalRefineSize);
+	}
 
-		__syncthreads();
+	__syncthreads();
 
-		if(ctaOutputAssignment.getGlobalSize() > maxGridDataSize) //overflow
-			return;
+	if(ctaOutputAssignment.getGlobalSize() > maxGridDataSize) //overflow
+		return;
 
 
-		SizeType energy = 0;
+	SizeType energy = 0;
+	if(refineSize > 0) {
+		devGridPointerStart[refineId] = globalOffset + localOffset; //point to child cells
+		energy = AmrRegDevice<Settings>::computeEnergy(gridData);
+	}
+
+
+	refineLevel++;
+	if(refineLevel < maxRefineLevel) {
+
 		if(refineSize > 0) {
-			devGridPointerStart[refineId] = globalOffset + localOffset; //point to child cells
-			energy = AmrRegDevice<Settings>::computeEnergy(gridData);
+			//reportDevice("launch data %f, %d\n", gridData, refineSize);
+			SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
+			//reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
+			amrCdpThreadRefineKernel<Settings>
+				<<< cdpCtas, Settings::CDP_THREADS >>> (
+					refineSize,
+					devGridData,
+					devGridPointer,
+					energy,
+					maxGridDataSize,
+					maxRefineLevel,
+					gridRefineThreshold,
+					globalOffset + localOffset,
+					refineLevel,
+					ctaOutputAssignment
+					);
+			checkErrorDevice();
+			//reportDevice("End launch threshod %f, %d\n", gridData, refineSize);
 		}
-
-
-		refineLevel++;
-		if(refineLevel < maxRefineLevel) {
-
-			if(refineSize > 0) {
-//				reportDevice("launch data %f, %d\n", gridData, refineSize);
-				SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
-//				reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
-				amrCdpThreadRefineKernel<Settings>
-					<<< cdpCtas, Settings::CDP_THREADS >>> (
-						refineSize,
-						devGridData,
-						devGridPointer,
-						energy,
-						maxGridDataSize,
-						maxRefineLevel,
-						gridRefineThreshold,
-						globalOffset + localOffset,
-						refineLevel,
-						ctaOutputAssignment
-						);
-				checkErrorDevice();
-				//reportDevice("End launch threshod %f, %d\n", gridData, refineSize);
-			}
-		}
+	}
 		
-
-
 }
+
 }
 }

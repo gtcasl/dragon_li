@@ -51,6 +51,7 @@ public:
 	SizeType maxGridDataSize;
 	SizeType maxRefineLevel;
 	DataType maxGridValue;
+	DataType startGridValue;
 	DataType gridRefineThreshold;
 	SizeType activeGridSize;
 	bool gridSizeOverflow;
@@ -101,7 +102,6 @@ public:
 			return -1;
 		}
 
-		DataType startGridValue;
 		dragon_li::util::Random<DataType, SizeType>::random(&startGridValue, 1, 0, maxGridValue);
 		report("Start Grid Value: " << startGridValue);
 		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
@@ -124,6 +124,10 @@ public:
 
 		return 0;
 
+	}
+
+	DataType getStartGridValue() {
+		return startGridValue;
 	}
 
 	virtual int displayResult() {

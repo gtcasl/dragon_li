@@ -6,8 +6,8 @@
 #include <dragon_li/amr/types.h>
 #include <dragon_li/amr/settings.h>
 #include <dragon_li/amr/amrReg.h>
-//#include <dragon_li/amr/amrCdp.h>
-//#include <dragon_li/amr/amrCpu.h>
+#include <dragon_li/amr/amrCdp.h>
+#include <dragon_li/amr/amrCpu.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	typedef dragon_li::util::Settings< 
 				_Types,						//types
 				256, 						//THREADS
-				104,							//CTAS
+				104,						//CTAS
 				5,							//CDP_THREADS_BITS
 				32							//CDP_THRESHOLD
 				> _Settings;
@@ -88,9 +88,41 @@ int main(int argc, char **argv) {
 		if(amrReg.refine())
 			return -1;
 	
+		if(verify) {
+			dragon_li::amr::AmrCpu<Types>::amrCpu(amrReg.getStartGridValue());
+//			if(!amrReg.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
+//				std::cout << "Verify correct!\n";
+//			}
+//			else {
+//				std::cout << "Incorrect!\n";
+//			}
+		}
+	
+		if(amrReg.displayResult())
+			return -1;
+	}
+#ifdef ENABLE_CDP
+	else {
+		dragon_li::amr::AmrCdp< Settings > amrCdp;
+		dragon_li::amr::AmrCdp< Settings >::UserConfig amrCdpConfig(
+														verbose,
+														veryVerbose,
+														maxGridDataSize,
+														maxRefineLevel,
+														maxGridValue,
+														gridRefineThreshold
+														);
+	
+
+		if(amrCdp.setup(amrCdpConfig))
+			return -1;
+	
+		if(amrCdp.refine())
+			return -1;
+	
 //		if(verify) {
 //			dragon_li::amr::AmrCpu<Types>::amrCpu(graph);
-//			if(!amrReg.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
+//			if(!amrCdp.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
 //				std::cout << "Verify correct!\n";
 //			}
 //			else {
@@ -98,41 +130,10 @@ int main(int argc, char **argv) {
 //			}
 //		}
 	
-		if(amrReg.displayResult())
+		if(amrCdp.displayResult())
 			return -1;
 	}
-//	else {
-//		dragon_li::amr::AmrCdp< Settings > amrCdp;
-//		dragon_li::amr::AmrCdp< Settings >::UserConfig amrCdpConfig(
-//														verbose,
-//														veryVerbose,
-//														maxGridDataSize,
-//														maxRefineLevel,
-//														maxGridValue,
-//														gridRefineThreshold
-//														);
-//	
-//
-//		if(amrCdp.setup(amrCdpConfig))
-//			return -1;
-//	
-//		if(amrCdp.refine())
-//			return -1;
-//	
-////		if(verify) {
-////			dragon_li::amr::AmrCpu<Types>::amrCpu(graph);
-////			if(!amrCdp.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
-////				std::cout << "Verify correct!\n";
-////			}
-////			else {
-////				std::cout << "Incorrect!\n";
-////			}
-////		}
-//	
-//		if(amrCdp.displayResult())
-//			return -1;
-//	}
-
+#endif
 
 	return 0;
 }
