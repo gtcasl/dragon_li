@@ -7,6 +7,7 @@ Import('env')
 cppdefines = []
 cpppath = [
 	'.',
+    './hydrazine',
 	'/usr/local/cuda/include'
 	]
 cxx = ['g++']
@@ -37,8 +38,8 @@ env.Replace(
 
 hydrazine_src = []
 hydrazine_dirs = [
-	'hydrazine/implementation',
-	'hydrazine/interface'
+	'hydrazine/hydrazine/implementation',
+	'hydrazine/hydrazine/interface'
 	]
 exts = ['*.cpp']
 for dirname in hydrazine_dirs:
@@ -50,7 +51,7 @@ hydrazine_lib = env.StaticLibrary('libhydrazine', hydrazine_src, LIBS=['-lrt'])
 
 NVCC = '/usr/local/cuda/bin/nvcc '
 NVCCFLAGS = ' -m64 -O3 '
-actionCommon = NVCC + NVCCFLAGS + ' -I. $SOURCES -o $TARGET $LIBS ' + env['_CPPDEFFLAGS']
+actionCommon = NVCC + NVCCFLAGS + ' -I. -I./hydrazine $SOURCES -o $TARGET $LIBS ' + env['_CPPDEFFLAGS']
 
 env.Append(BUILDERS = {
 'Cuda_20' : Builder(
