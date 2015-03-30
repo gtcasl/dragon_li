@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+
+# Graph input
+graphs/
+gpgpusim/
