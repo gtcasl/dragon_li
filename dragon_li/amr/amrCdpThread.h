@@ -110,7 +110,7 @@ __global__ void amrCdpThreadRefineKernel(
 					refineLevel,
 					ctaOutputAssignment
 					);
-			checkErrorDevice();
+			//checkErrorDevice();
 			//reportDevice("End launch threshod %f, %d\n", gridData, refineSize);
 		}
 	}
