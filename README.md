@@ -5,6 +5,10 @@ Parallelism (CDP) features on NVIDIA's GPU with GK110 architecture or above (sm_
 The purpose of `Dragon_li` is to facilitate investigation and studies on irregular applications
 that feature fine-grained dynamic parallelism on modern GPU architectures.
 
+The current version of `Dragon_li` is only a preliminary release. The authors are continuously
+adding more features to the exsiting benchmarks, new benchmarks and documents. Please check
+out the [Dragon_li project site](http://gpuocelot.gatech.edu/dragon_li/) for more information. 
+
 ## Check out
 
 To check out the source code, first run:
