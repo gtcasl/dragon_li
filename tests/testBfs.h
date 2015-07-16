@@ -116,8 +116,8 @@ int testBfs(int argc, char **argv) {
 			return -1;
 	}
 
-#ifdef ENABLE_CDP
 	else {
+#ifdef ENABLE_CDP
 		dragon_li::bfs::BfsCdp< Settings > bfsCdp;
 		dragon_li::bfs::BfsCdp< Settings >::UserConfig bfsCdpConfig(
 														verbose,
@@ -142,12 +142,10 @@ int testBfs(int argc, char **argv) {
 	
 		if(bfsCdp.displayResult())
 			return -1;
-	}
 #else
-    else {
         std::cout << "CDP is not supported! considering enable CDP in scons\n";
-    }
 #endif
+    }
 
 	return 0;
 }

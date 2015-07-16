@@ -1,3 +1,5 @@
+#ifdef ENABLE_CDP
+
 #pragma once
 
 #include <dragon_li/amr/amrReg.h>
@@ -58,3 +60,5 @@ public:
 
 }
 }
+
+#endif

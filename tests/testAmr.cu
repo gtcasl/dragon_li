@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
 		if(amrReg.displayResult())
 			return -1;
 	}
-#ifdef ENABLE_CDP
 	else {
+#ifdef ENABLE_CDP
 		dragon_li::amr::AmrCdp< Settings > amrCdp;
 		dragon_li::amr::AmrCdp< Settings >::UserConfig amrCdpConfig(
 														verbose,
@@ -132,8 +132,10 @@ int main(int argc, char **argv) {
 	
 		if(amrCdp.displayResult())
 			return -1;
-	}
+#else
+        std::cout << "CDP is not supported! considering enable CDP in scons\n";
 #endif
+	}
 
 	return 0;
 }
