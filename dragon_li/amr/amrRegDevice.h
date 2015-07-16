@@ -111,7 +111,7 @@ public:
 
 			DataType refineData = computeTemperature(energy, refineId); 
 			devGridData[globalOffset + localOffset + refineId] = refineData;
-			reportDevice("%d.%d, offset %d, data %f\n", blockIdx.x, threadIdx.x, globalOffset + localOffset + refineId, refineData); 
+			reportDevice("%d.%d, offset %d, energy %f, data %f\n", blockIdx.x, threadIdx.x, globalOffset + localOffset + refineId, energy, refineData); 
 		}
 
 
@@ -132,8 +132,8 @@ public:
 	
 		while(ctaWorkAssignment.workOffset < processGridSize) {
 			ctaWorkAssignment.getCtaWorkAssignment();
-			if(threadIdx.x == 0)
-				reportDevice("%d: %d\n", blockIdx.x, ctaWorkAssignment.workOffset);	
+//			if(threadIdx.x == 0)
+//				reportDevice("%d: %d\n", blockIdx.x, ctaWorkAssignment.workOffset);	
 			amrRegCtaRefine(
 				ctaWorkAssignment,
 				devGridData,

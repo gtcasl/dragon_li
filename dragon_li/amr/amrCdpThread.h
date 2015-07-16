@@ -5,7 +5,7 @@
 #include <dragon_li/amr/amrRegDevice.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace amr {
@@ -40,7 +40,7 @@ __global__ void amrCdpThreadRefineKernel(
 
 		DataType refineData = AmrRegDevice<Settings>::computeTemperature(inputEnergy, refineId); 
 		devGridData[outputOffset + refineId] = refineData;
-		//reportDevice("%d.%d, offset %d, data %f\n", blockIdx.x, threadIdx.x, outputOffset + refineId, refineData); 
+		reportDevice("%d.%d, offset %d, inputEnergy %f, data %f\n", blockIdx.x, threadIdx.x, outputOffset + refineId, inputEnergy, refineData); 
 
 	}
 
@@ -69,12 +69,15 @@ __global__ void amrCdpThreadRefineKernel(
 	SizeType localOffset; //output offset within cta
 	localOffset = dragon_li::util::prefixSumCta<CDP_THREADS, SizeType>(refineSize, 
 			totalRefineSize);
-		//reportDevice("%d: self %d, offset %d, total %d\n", threadIdx.x, refineSize, localOffset, totalRefineSize);
+
+//    if(threadIdx.x == 0)
+//		reportDevice("refineLevel %d, total %d\n", refineLevel, totalRefineSize);
 
 	__shared__ SizeType globalOffset;
 
 	if(threadIdx.x == 0 && totalRefineSize > 0) {
 		globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalRefineSize);
+		reportDevice("refineLevel %d, total %d, offset %d\n", refineLevel, totalRefineSize, globalOffset);
 	}
 
 	__syncthreads();
@@ -83,7 +86,7 @@ __global__ void amrCdpThreadRefineKernel(
 		return;
 
 
-	SizeType energy = 0;
+	DataType energy = 0;
 	if(refineSize > 0) {
 		devGridPointerStart[refineId] = globalOffset + localOffset; //point to child cells
 		energy = AmrRegDevice<Settings>::computeEnergy(gridData);
