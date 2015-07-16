@@ -12,10 +12,6 @@
 namespace dragon_li {
 namespace amr {
 
-template< typename Settings,
-	bool ThreadLaunch>
-class AmrCdpDevice;
-
 template< typename Settings >
 __global__ void amrCdpThreadRefineKernel(
 	typename Settings::SizeType processSize,

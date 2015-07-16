@@ -14,13 +14,12 @@
 namespace dragon_li {
 namespace amr {
 
-template< typename Settings,
-	bool ThreadLaunch = false>
+template< typename Settings>
 class AmrCdpDevice {
 
 	typedef typename Settings::DataType DataType;
 	typedef typename Settings::SizeType SizeType;
-	static const SizeType THREADS = ThreadLaunch ? Settings::CDP_THREADS : Settings::THREADS;
+	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
 	static const SizeType GRID_REFINE_SIZE = Settings::GRID_REFINE_SIZE;
 
