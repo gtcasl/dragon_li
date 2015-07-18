@@ -1,17 +1,23 @@
 #pragma once
 
+#include <list>
+
 #include <dragon_li/util/userConfig.h>
 #include <dragon_li/util/debug.h>
 #include <dragon_li/util/random.h>
 #include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
 #include <dragon_li/util/debug.h>
+#include <dragon_li/amr/amrCpu.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
 
 namespace dragon_li {
 namespace amr {
+
+template < typename Settings >
+class AmrCpu;
 
 template < typename Settings >
 class AmrBase {
@@ -131,6 +137,15 @@ public:
 	DataType getStartGridValue() {
 		return startGridValue;
 	}
+
+    virtual int verifyResult(std::list< struct AmrCpu<Settings>::AmrCpuData > &cpuAmrData) {
+        
+        //Quick verify size only
+        if(activeGridSize == cpuAmrData.size())
+            return 0;
+        else
+            return 1;
+    }
 
 	virtual int displayResult() {
 		return 0;

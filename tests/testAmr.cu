@@ -89,13 +89,13 @@ int main(int argc, char **argv) {
 			return -1;
 	
 		if(verify) {
-			dragon_li::amr::AmrCpu<Types>::amrCpu(amrReg.getStartGridValue());
-//			if(!amrReg.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
+			dragon_li::amr::AmrCpu<Settings>::amrCpu(amrReg.getStartGridValue(), gridRefineThreshold);
+			if(!amrReg.verifyResult(dragon_li::amr::AmrCpu<Settings>::cpuAmrData)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
 		}
 	
 		if(amrReg.displayResult())
@@ -120,15 +120,15 @@ int main(int argc, char **argv) {
 		if(amrCdp.refine())
 			return -1;
 	
-//		if(verify) {
-//			dragon_li::amr::AmrCpu<Types>::amrCpu(graph);
-//			if(!amrCdp.verifyResult(dragon_li::amr::AmrCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
-//		}
+		if(verify) {
+			dragon_li::amr::AmrCpu<Settings>::amrCpu(amrCdp.getStartGridValue(), gridRefineThreshold);
+			if(!amrCdp.verifyResult(dragon_li::amr::AmrCpu<Settings>::cpuAmrData)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
 	
 		if(amrCdp.displayResult())
 			return -1;

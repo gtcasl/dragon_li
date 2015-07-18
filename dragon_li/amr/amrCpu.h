@@ -2,28 +2,19 @@
 
 #include <list>
 
+#include <dragon_li/amr/amrRegDevice.h>
+
 namespace dragon_li {
 namespace amr {
 
-template< typename Types >
+template< typename Settings >
 class AmrCpu {
-	typedef typename Types::SizeType SizeType;
-	typedef typename Types::DataType DataType;
+	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::DataType DataType;
+
+	static const SizeType GRID_REFINE_SIZE = Settings::GRID_REFINE_SIZE;
 
 public:
-	class CpuConfig : public dragon_li::util::UserConfig {
-		DataType startGridValue;
-		DataType gridRefineThreshold;
-
-		CpuConfig(
-			bool _verbose,
-			bool _veryVerbose,
-			DataType _startGridValue,
-			DataType _gridRefineThreshold) :
-				util::UserConfig(_verbose, _veryVerbose),
-				startGridValue(_startGridValue),
-				gridRefineThreshold(_gridRefineThreshold) {}
-	};
 
 	struct AmrCpuData {
 		DataType data;
@@ -39,14 +30,31 @@ public:
 
 	static std::list<AmrCpuData> cpuAmrData;
 
-	static int amrCpu(DataType startGridValue) {
+	static int amrCpu(DataType startGridValue, DataType gridRefineThreshold) {
 
 		cpuAmrData.push_back(AmrCpuData(startGridValue, cpuAmrData.end()));
 
 		typename std::list<AmrCpuData>::iterator curIt = cpuAmrData.begin();
 		while (curIt != cpuAmrData.end()) {
 			DataType gridData = curIt->data;
-		//	if(gridData > 
+
+			if(gridData > gridRefineThreshold) {
+                DataType energy = AmrRegDevice< Settings >::computeEnergy(gridData);
+
+                //Insert first refined child, and set the child start pointer
+                SizeType refineId = 0;
+                DataType refineData = AmrRegDevice< Settings >::computeTemperature(energy, refineId);
+                curIt->childPtr = cpuAmrData.insert(cpuAmrData.end(), AmrCpuData(refineData, cpuAmrData.end()));
+
+                //Insert the remaining refined child
+                for(refineId = 1; refineId < GRID_REFINE_SIZE; refineId++) {
+
+                    DataType refineData = AmrRegDevice< Settings >::computeTemperature(energy, refineId);
+                    cpuAmrData.push_back(AmrCpuData(refineData, cpuAmrData.end()));
+                } 
+            }
+
+            curIt++;
 		}
 
 		return 0;
