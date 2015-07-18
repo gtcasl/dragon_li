@@ -52,7 +52,7 @@ public:
 		for(SizeType i = 0; i < count; i++) {
 			int randomNum = std::rand();
 
-			float output = (float)randomNum / (float)RAND_MAX * (rangeEnd - rangeStart) + rangeEnd;
+			float output = (float)randomNum / (float)RAND_MAX * (rangeEnd - rangeStart) + rangeStart;
 			data[i] = output;
 	
 		}

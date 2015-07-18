@@ -5,6 +5,9 @@
 #include <dragon_li/amr/amrReg.h>
 #include <dragon_li/amr/amrCdpDevice.h>
 
+#undef REPORT_BASE
+#define REPORT_BASE 0
+
 namespace dragon_li {
 namespace amr {
 
@@ -42,7 +45,8 @@ public:
 		if(this->ctaOutputAssignment.getGlobalSize(this->activeGridSize))
 			return -1;
 
-		report("activeGridSize = " << this->activeGridSize);
+        if(this->verbose)
+            std::cout << "activeGridSize = " << this->activeGridSize << "\n";
 
 		if(this->activeGridSize > this->maxGridDataSize) {
 			this->gridSizeOverflow = true;

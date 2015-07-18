@@ -4,7 +4,7 @@
 #include <dragon_li/amr/amrRegDevice.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace amr {
@@ -35,7 +35,9 @@ public:
 		while(iteration < this->maxRefineLevel && !this->gridSizeOverflow) {
 
 			SizeType processGridSize = this->activeGridSize - processGridOffset;
-			report("ProcessGridSize " << processGridSize);
+            if(this->verbose)
+			    std::cout << "Iteration " << iteration << ": " <<
+                    "ProcessGridSize " << processGridSize << ", ";
 
 			amrRegRefineKernel< Settings >
 				<<< CTAS, THREADS >>> (
@@ -60,7 +62,9 @@ public:
 			if(this->ctaOutputAssignment.getGlobalSize(this->activeGridSize))
 				return -1;
 
-			report("activeGridSize = " << this->activeGridSize);
+            if(this->verbose)
+    			std::cout << "activeGridSize = " << this->activeGridSize 
+                    << "\n";
 
 			iteration++;
 			if(this->activeGridSize == processGridOffset) //no new cells generated
@@ -115,7 +119,7 @@ public:
 
 	virtual int displayResult() {
 
-		std::cout << "GPU AMR regular refine depth = " << iteration 
+		std::cout << "GPU AMR refine depth = " << iteration 
 			<< ", Grid Size = " << this->activeGridSize << "\n";
 
 		if(this->veryVerbose) {

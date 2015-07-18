@@ -143,7 +143,7 @@ int testBfs(int argc, char **argv) {
 		if(bfsCdp.displayResult())
 			return -1;
 #else
-        std::cout << "CDP is not supported! considering enable CDP in scons\n";
+        std::cout << "CDP is not supported! Is CDP enabled in scons?\n";
 #endif
     }
 

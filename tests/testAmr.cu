@@ -57,16 +57,16 @@ int main(int argc, char **argv) {
 	parser.parse("", "--cdp", cdp, false, "Use Cuda Dynamic Parallelism");
 
 	Settings::SizeType maxGridDataSize;
-	parser.parse("", "--maxGridDataSize", maxGridDataSize, 4*1024*1024, "Max Grid Size (cell count)");
+	parser.parse("-s", "--maxGridDataSize", maxGridDataSize, 4*1024*1024, "Max Grid Size (cell count)");
 
 	Settings::SizeType maxRefineLevel;
-	parser.parse("", "--maxRefineLevel", maxRefineLevel, 32, "Max level to refine the grid"); 
+	parser.parse("-r", "--maxRefineLevel", maxRefineLevel, 32, "Max level to refine the grid"); 
 
 	Settings::DataType maxGridValue;
-	parser.parse("", "--maxGridValue", maxGridValue, 6000.0, "Max grid value");
+	parser.parse("-g", "--maxGridValue", maxGridValue, 6000.0, "Max grid value");
 
 	Settings::DataType gridRefineThreshold;
-	parser.parse("", "--gridRefineThreshold", gridRefineThreshold, 100.0, "Refine threshold for grid");
+	parser.parse("-t", "--gridRefineThreshold", gridRefineThreshold, 100.0, "Refine threshold for grid");
 
 	parser.parse();
 
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 		if(amrCdp.displayResult())
 			return -1;
 #else
-        std::cout << "CDP is not supported! considering enable CDP in scons\n";
+        std::cout << "CDP is not supported! Is CDP enabled in scons?\n";
 #endif
 	}
 

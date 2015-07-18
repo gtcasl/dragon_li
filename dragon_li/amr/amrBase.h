@@ -5,9 +5,10 @@
 #include <dragon_li/util/random.h>
 #include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
+#include <dragon_li/util/debug.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace amr {
@@ -103,7 +104,8 @@ public:
 		}
 
 		dragon_li::util::Random<DataType, SizeType>::random(&startGridValue, 1, 0, maxGridValue);
-		report("Start Grid Value: " << startGridValue);
+        if(verbose)
+    		std::cout << "Start Grid Value: " << startGridValue << "\n"; 
 		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
 			(devGridData, startGridValue, 1))
 			return -1;
@@ -135,6 +137,7 @@ public:
 	}
 
 	virtual int finish() {
+        cudaDeviceReset();
 		return 0;
 	}
 
