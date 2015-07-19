@@ -24,6 +24,23 @@ public:
 
 	AmrCdp() : AmrReg< Settings >() {}
 
+	int setup(typename AmrReg<Settings>::UserConfig & userConfig) {
+        int status = 0;
+
+        //Base class setup
+        status = AmrReg< Settings >::setup(userConfig);
+        if(status)
+            return status;
+
+        cudaError_t result = cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 2048);
+        if(result) {
+            errorCuda(result);
+            return -1;
+        }
+        return 0;
+
+    }
+
 	int refine() {
 
 		amrCdpRefineKernel< Settings >
