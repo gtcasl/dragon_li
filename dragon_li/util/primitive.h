@@ -30,6 +30,14 @@ __device__ DataType prefixSumCta(DataType input, DataType &total, DataType carry
 		return sharedMem[threadIdx.x - 1] + carryIn;
 }
 
+template< int CTA_SIZE, typename DataType >
+__device__ DataType * memcpyCta(DataType *output, const DataType *input, int count) {
+
+    for(int i = threadIdx.x; i < count; i+= CTA_SIZE)
+        output[i] = input[i];
+
+    return output + count;
+}
 
 }
 }
