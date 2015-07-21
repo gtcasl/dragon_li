@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 	parser.parse("-s", "--maxGridDataSize", maxGridDataSize, 4*1024*1024, "Max Grid Size (cell count)");
 
 	Settings::SizeType maxRefineLevel;
-	parser.parse("-r", "--maxRefineLevel", maxRefineLevel, 32, "Max level to refine the grid"); 
+	parser.parse("-r", "--maxRefineLevel", maxRefineLevel, 4, "Max level to refine the grid"); 
 
 	Settings::DataType maxGridValue;
 	parser.parse("-g", "--maxGridValue", maxGridValue, 6000.0, "Max grid value");

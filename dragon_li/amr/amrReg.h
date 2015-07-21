@@ -71,7 +71,7 @@ public:
 				break;
 
 			if(iteration >= this->maxRefineLevel) {
-				errorMsg("Max Refine Level reached! Consider increasing maxRefineLevel!");
+				report("Max Refine Level reached! Consider increasing maxRefineLevel!");
 				break;
 			}
 			if(this->activeGridSize > this->maxGridDataSize) {
