@@ -98,8 +98,10 @@ __global__ void amrCdpThreadRefineKernel(
 			//reportDevice("launch data %f, %d\n", gridData, refineSize);
 			SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
 			//reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
+			cudaStream_t s;
+			cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
 			amrCdpThreadRefineKernel<Settings>
-				<<< cdpCtas, Settings::CDP_THREADS >>> (
+				<<< cdpCtas, Settings::CDP_THREADS, 0, s >>> (
 					refineSize,
 					devGridData,
 					devGridPointer,
