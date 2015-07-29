@@ -98,13 +98,6 @@ public:
 	
 	}
 
-	int prefixScan(
-			SizeType * devInput,
-			SizeType inputSize) {
-
-		return 0;
-	}
-
 	int findBounds() {
 		
 		joinRegFindBoundsKernel< Settings >
@@ -124,7 +117,7 @@ public:
 			return -1;
 		}
 		
-		if(prefixScan(devOutBounds, CTAS + 1)) {
+		if(util::prefixScan<THREADS, DataType>(devOutBounds, CTAS + 1)) {
 			errorMsg("Prefix Sum for outBounds fails");
 			return -1;
 		}
@@ -159,8 +152,24 @@ public:
 
 	int gather() {
 
-		if(prefixScan(devHistogram, CTAS + 1)) {
+		if(util::prefixScan<THREADS, DataType>(devHistogram, CTAS + 1)) {
 			errorMsg("Prefix Sum for histogram fails");
+			return -1;
+		}
+
+		cudaError_t retVal;
+		if(retVal = cudaMemcpy(&this->outputCount, devHistogram + CTAS, sizeof(SizeType), cudaMemcpyDeviceToHost)) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaMalloc(&this->devJoinLeftOutIndices, this->outputCount * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaMalloc(&this->devJoinRightOutIndices, this->outputCount * sizeof(SizeType))) {
+			errorCuda(retVal);
 			return -1;
 		}
 
@@ -176,7 +185,6 @@ public:
 				this->devJoinOutputCount
 			);
 
-		cudaError_t retVal;
 		if(retVal = cudaDeviceSynchronize()) {
 			errorCuda(retVal);
 			return -1;

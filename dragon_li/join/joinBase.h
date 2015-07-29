@@ -105,6 +105,29 @@ public:
 	}
 
 	virtual int finish() {
+
+		cudaError_t retVal;
+		if(retVal = cudaFree(devJoinInputLeft)) {
+			errorCuda(retVal);
+			return -1;
+		}
+		
+		if(retVal = cudaFree(devJoinInputRight)) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaFree(devJoinLeftOutIndices)) {
+			errorCuda(retVal);
+			return -1;
+		}
+		
+		if(retVal = cudaFree(devJoinRightOutIndices)) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+
 		return 0;
 	}
 };

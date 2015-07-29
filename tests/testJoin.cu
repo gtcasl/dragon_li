@@ -93,6 +93,9 @@ int main(int argc, char **argv) {
 	
 		if(joinReg.displayResult())
 			return -1;
+
+		if(joinReg.finish())
+			return -1;
 	}
 //	else {
 //		dragon_li::join::JoinCdp< Settings > joinCdp;

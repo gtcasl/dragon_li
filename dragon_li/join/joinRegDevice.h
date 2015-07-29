@@ -408,6 +408,28 @@ public:
 		SizeType * devHistogram,
 		SizeType * devJoinOutputCount
 	) {
+	
+		const SizeType* leftBegin = devJoinLeftOutIndicesScattered + devOutBounds[blockIdx.x];
+		const SizeType* rightBegin = devJoinRightOutIndicesScattered + devOutBounds[blockIdx.x];
+		
+		SizeType beginIndex = devHistogram[blockIdx.x];
+		SizeType endIndex   = devHistogram[blockIdx.x + 1];
+		
+		SizeType elements = endIndex - beginIndex;
+
+		SizeType start = threadIdx.x;
+		SizeType step  = blockDim.x;
+		
+		for(unsigned int i = start; i < elements; i += step)
+		{
+			devJoinLeftOutIndices[beginIndex + i] = leftBegin[i];
+			devJoinRightOutIndices[beginIndex + i] = rightBegin[i];
+		}
+	
+		if(threadIdx.x == 0 && blockIdx.x == 0)
+		{
+			*devJoinOutputCount = devHistogram[gridDim.x];
+		}
 	}
 
 };
