@@ -230,18 +230,14 @@ public:
 		std::cout << "Join output size " << this->outputCount << "\n";
 
 		if(this->veryVerbose) {
-			std::vector<SizeType> leftIndices(this->outputCount), rightIndices(this->outputCount);
-			cudaMemcpy(leftIndices.data(), this->devJoinLeftOutIndices, 
-				this->outputCount * sizeof(DataType), 
-				cudaMemcpyDeviceToHost);
-			cudaMemcpy(rightIndices.data(), this->devJoinRightOutIndices, 
-				this->outputCount * sizeof(DataType), 
-				cudaMemcpyDeviceToHost);
-		
+
+			if(this->getDevJoinResult())
+				return -1;
 
 			std::cout << "Output Indices:\n";
 			for(int i = 0; i < this->outputCount; i++)
-				std::cout << "[" << leftIndices[i] << ", " << rightIndices[i] << "], ";
+				std::cout << "[" << this->outputIndicesLeft[i] 
+					<< ", " << this->outputIndicesRight[i] << "], ";
 			std::cout << "\n\n";
 
 		}

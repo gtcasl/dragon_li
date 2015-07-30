@@ -41,6 +41,8 @@ public:
 	SizeType inputCountLeft;
 	SizeType inputCountRight;
 	SizeType outputCount;
+	std::vector<SizeType> outputIndicesLeft;
+	std::vector<SizeType> outputIndicesRight;
 
 	//Join Device information
 	DataType * devJoinInputLeft;
@@ -115,6 +117,65 @@ public:
 		if(retVal = cudaMemset(devJoinOutputCount, 0, sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
+		}
+
+		return 0;
+	}
+
+	int getDevJoinResult() {
+
+		cudaError_t retVal;
+
+		if(outputIndicesLeft.empty() && outputIndicesRight.empty()) {
+
+			outputIndicesLeft.resize(outputCount);
+			outputIndicesRight.resize(outputCount);
+		
+			if(retVal = cudaMemcpy(outputIndicesLeft.data(), 
+				devJoinLeftOutIndices, 
+				outputCount * sizeof(DataType), 
+				cudaMemcpyDeviceToHost)) {
+
+				errorCuda(retVal);
+				return -1;
+			}
+
+			if(retVal = cudaMemcpy(outputIndicesRight.data(), 
+				devJoinRightOutIndices, 
+				outputCount * sizeof(DataType), 
+				cudaMemcpyDeviceToHost)) {
+
+				errorCuda(retVal);
+				return -1;
+			}
+		}
+
+		return 0;
+		
+	}
+
+	virtual int verifyResult(std::vector<SizeType> &cpuJoinLeftIndices,
+		std::vector<SizeType> &cpuJoinRightIndices, 
+		JoinData<Types> &joinData) {
+
+		if(getDevJoinResult())
+			return -1;
+
+		if(cpuJoinLeftIndices.size() != outputCount ||
+			cpuJoinRightIndices.size() != outputCount)
+			return 1;
+
+		for(SizeType i = 0; i < outputCount; i++) {
+			SizeType cpuLeftId = cpuJoinLeftIndices[i];
+			SizeType cpuRightId = cpuJoinRightIndices[i];
+			SizeType gpuLeftId = outputIndicesLeft[i];
+			SizeType gpuRightId = outputIndicesRight[i];
+
+			if((joinData.inputLeft[cpuLeftId] != 
+				joinData.inputLeft[gpuLeftId] ) || 
+				(joinData.inputRight[cpuRightId] !=
+				joinData.inputRight[gpuRightId]))
+				return 1;
 		}
 
 		return 0;

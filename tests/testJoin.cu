@@ -7,7 +7,7 @@
 #include <dragon_li/join/settings.h>
 #include <dragon_li/join/joinReg.h>
 //#include <dragon_li/join/joinCdp.h>
-//#include <dragon_li/join/joinCpu.h>
+#include <dragon_li/join/joinCpu.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -81,15 +81,18 @@ int main(int argc, char **argv) {
 		if(joinReg.join())
 			return -1;
 	
-//		if(verify) {
-//			dragon_li::join::JoinCpu<Types>::joinCpu(graph);
-//			if(!joinReg.verifyResult(dragon_li::join::JoinCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
-//		}
+		if(verify) {
+			dragon_li::join::JoinCpu<Types>::joinCpu(joinData);
+			if(!joinReg.verifyResult(
+				dragon_li::join::JoinCpu<Types>::cpuJoinLeftIndices, 
+				dragon_li::join::JoinCpu<Types>::cpuJoinRightIndices,
+				joinData)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
 	
 		if(joinReg.displayResult())
 			return -1;
