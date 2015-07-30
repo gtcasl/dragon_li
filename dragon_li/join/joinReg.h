@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/join/joinBase.h>
@@ -101,7 +102,7 @@ public:
 	int findBounds() {
 		
 		joinRegFindBoundsKernel< Settings >
-			<<< CTAS, THREADS>>> (
+			<<< (CTAS + THREADS - 1)/THREADS, THREADS >>> (
 			this->devJoinInputLeft,
 			this->inputCountLeft,
 			this->devJoinInputRight,
@@ -116,10 +117,32 @@ public:
 			errorCuda(retVal);
 			return -1;
 		}
+
+		if(this->veryVerbose) {
+			std::vector<SizeType> upper(CTAS), lower(CTAS);
+			cudaMemcpy(lower.data(), devLowerBounds, CTAS * sizeof(SizeType), cudaMemcpyDeviceToHost);
+			cudaMemcpy(upper.data(), devUpperBounds, CTAS * sizeof(SizeType), cudaMemcpyDeviceToHost);
 		
-		if(util::prefixScan<THREADS, DataType>(devOutBounds, CTAS + 1)) {
+
+			std::cout << "Right Bounds:\n";
+			for(int i = 0; i < CTAS; i++)
+				std::cout << "[" << lower[i] << ", " << upper[i] << "], ";
+			std::cout << "\n\n";
+
+		}
+		
+		if(util::prefixScan<THREADS, SizeType>(devOutBounds, CTAS + 1)) {
 			errorMsg("Prefix Sum for outBounds fails");
 			return -1;
+		}
+
+		if(this->veryVerbose) {
+			std::vector<SizeType> outBounds(CTAS+1);
+			cudaMemcpy(outBounds.data(), devOutBounds, (CTAS+1) * sizeof(SizeType), cudaMemcpyDeviceToHost);
+			std::cout << "Out Bounds:\n";
+			for(int i = 0; i < CTAS+1; i++)
+				std::cout << outBounds[i] << ", ";
+			std::cout << "\n\n";
 		}
 
 		return 0;
@@ -147,6 +170,12 @@ public:
 			return -1;
 		}
 
+//		std::vector<SizeType> upper(1200);
+//		cudaMemcpy(upper.data(), devJoinRightOutIndicesScattered, (1200) * sizeof(SizeType), cudaMemcpyDeviceToHost);
+//		for(int i = 0; i < 1200; i++)
+//			std::cout << "u" << i << ": " << upper[i] << "\n";
+		
+
 		return 0;
 	}
 
@@ -155,6 +184,14 @@ public:
 		if(util::prefixScan<THREADS, DataType>(devHistogram, CTAS + 1)) {
 			errorMsg("Prefix Sum for histogram fails");
 			return -1;
+		}
+		if(this->veryVerbose) {
+			std::vector<SizeType> histogram(CTAS+1);
+			cudaMemcpy(histogram.data(), devHistogram, (CTAS+1) * sizeof(SizeType), cudaMemcpyDeviceToHost);
+			std::cout << "Histogram:\n";
+			for(int i = 0; i < CTAS+1; i++)
+				std::cout << histogram[i] << ", ";
+			std::cout << "\n\n";
 		}
 
 		cudaError_t retVal;
@@ -190,21 +227,44 @@ public:
 			return -1;
 		}
 
+		std::cout << "Join output size " << this->outputCount << "\n";
+
+		if(this->veryVerbose) {
+			std::vector<SizeType> leftIndices(this->outputCount), rightIndices(this->outputCount);
+			cudaMemcpy(leftIndices.data(), this->devJoinLeftOutIndices, 
+				this->outputCount * sizeof(DataType), 
+				cudaMemcpyDeviceToHost);
+			cudaMemcpy(rightIndices.data(), this->devJoinRightOutIndices, 
+				this->outputCount * sizeof(DataType), 
+				cudaMemcpyDeviceToHost);
+		
+
+			std::cout << "Output Indices:\n";
+			for(int i = 0; i < this->outputCount; i++)
+				std::cout << "[" << leftIndices[i] << ", " << rightIndices[i] << "], ";
+			std::cout << "\n\n";
+
+		}
+
 		return 0;
 	}
 
 	int join() {
 
-		report("Finding bounds...");
+		if(this->verbose)
+			std::cout << "Finding bounds...\n";
+
 		if(findBounds())
 			return -1;
 
-		report("Main Join...");
+		if(this->verbose)
+			std::cout << "Main Join...\n";
 
 		if(mainJoin())
 			return -1;
 
-		report("Gathering...");
+		if(this->verbose)
+			std::cout << "Gathering...\n";
 		
 		if(gather())
 			return -1;

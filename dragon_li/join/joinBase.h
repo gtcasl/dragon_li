@@ -97,6 +97,26 @@ public:
 			return -1;
 		}
 
+		if(veryVerbose) {
+			std::cout << "Input Left: \n";
+			for(int i = 0; i < inputCountLeft; i++)
+				std::cout << joinData.inputLeft[i] << ", ";
+
+			std::cout << "\n\nInput Right: \n";
+			for(int i = 0; i < inputCountRight; i++)
+				std::cout << joinData.inputRight[i] << ", ";
+
+			std::cout << "\n\n";
+		}
+		if(retVal = cudaMalloc(&devJoinOutputCount, sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(retVal = cudaMemset(devJoinOutputCount, 0, sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
 		return 0;
 	}
 
@@ -127,6 +147,10 @@ public:
 			return -1;
 		}
 
+		if(retVal = cudaFree(devJoinOutputCount)) {
+			errorCuda(retVal);
+			return -1;
+		}
 
 		return 0;
 	}

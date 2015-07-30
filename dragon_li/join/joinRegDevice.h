@@ -52,11 +52,13 @@ public:
 		SizeType low = 0;
 		SizeType high = dataCount;
 
-		SizeType mid = low + (high - low) / 2;
-		if(key < data[mid])
-			high = mid;
-		else
-			low = mid + 1;
+		while(low < high) {
+			SizeType mid = low + (high - low) / 2;
+			if(key < data[mid])
+				high = mid;
+			else
+				low = mid + 1;
+		}
 
 		return low;
 	}
@@ -97,6 +99,7 @@ public:
 						devJoinInputRight,
 						inputCountRight);
 			devUpperBounds[partitionId] = upperBound;
+
 			devOutBounds[partitionId] = max(upperBound - lowerBound, leftEnd - leftStart) * JOIN_BLOCK_SF;
 		}
 		else {

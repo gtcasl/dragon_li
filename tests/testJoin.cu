@@ -36,8 +36,8 @@ int main(int argc, char **argv) {
 	typedef dragon_li::join::Settings<
 				_Settings, 					//Basic Settings
 				Types,						//Join Types
-				1000,
-				300
+				300,						//Join Scale Factor
+				100							//Join block scalefactor
 				> Settings;
 
 	hydrazine::ArgumentParser parser(argc, argv);
@@ -57,10 +57,10 @@ int main(int argc, char **argv) {
 
 
 	Settings::SizeType inputLeftCount;
-	parser.parse("", "--leftCnt", inputLeftCount, 1024, "Left input element count");
+	parser.parse("-l", "--leftCnt", inputLeftCount, 1024, "Left input element count");
 
 	Settings::SizeType inputRightCount;
-	parser.parse("", "--righCnt", inputRightCount, 1024, "Right input element count");
+	parser.parse("-r", "--righCnt", inputRightCount, 1024, "Right input element count");
 
 	parser.parse();
 

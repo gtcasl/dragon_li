@@ -33,3 +33,4 @@ gpgpusim/
 bin/
 .build/
 .scons*
+.*.swp
