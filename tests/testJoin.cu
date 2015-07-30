@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
 							> _Types;
 	typedef dragon_li::util::Settings< 
 				_Types,						//types
-				256, 						//THREADS
-				104,						//CTAS
+				128, 						//THREADS
+				240,						//CTAS
 				5,							//CDP_THREADS_BITS
 				32							//CDP_THRESHOLD
 				> _Settings;
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 				> Settings;
 
 	hydrazine::ArgumentParser parser(argc, argv);
-	parser.description("Dragon Li AMR");
+	parser.description("Dragon Li JOIN");
 
 	bool verbose;
 	parser.parse("-v", "--v1", verbose, false, "Verbose, display information");

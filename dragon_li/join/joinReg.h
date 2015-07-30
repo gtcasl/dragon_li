@@ -44,7 +44,7 @@ public:
 		devJoinRightOutIndicesScattered(NULL),
 		estJoinOutCount(0) {}
 
-	int setup(JoinData<Types> joinData,
+	int setup(JoinData<Types> & joinData,
 				typename JoinBase<Settings>::UserConfig & userConfig) {
 
 		//call setup from base class

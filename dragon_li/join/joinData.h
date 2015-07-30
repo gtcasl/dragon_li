@@ -36,6 +36,9 @@ public:
 		dragon_li::util::Random<DataType, SizeType>::random(inputLeft.data(), countLeft, 0, countLeft);
 		dragon_li::util::Random<DataType, SizeType>::random(inputRight.data(), countRight, 0, countRight);
 
+        std::sort(inputLeft.begin(), inputLeft.end());
+        std::sort(inputRight.begin(), inputRight.end());
+
 		return 0;
 
 	}

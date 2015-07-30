@@ -63,7 +63,7 @@ public:
 
 	virtual int join() = 0;
 
-	virtual int setup(JoinData<Types> joinData,
+	virtual int setup(JoinData<Types> & joinData,
 					UserConfig & userConfig) {
 
 		verbose = userConfig.verbose;
