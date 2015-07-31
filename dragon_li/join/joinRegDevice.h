@@ -235,6 +235,7 @@ public:
     		
     			outLeft = util::memcpyCta<THREADS, SizeType>(outLeft, cacheLeft, copiedThisTime);
     			outRight = util::memcpyCta<THREADS, SizeType>(outRight, cacheRight, copiedThisTime);
+    			__syncthreads();
     	        
     		}
     
