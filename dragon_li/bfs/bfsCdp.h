@@ -53,7 +53,11 @@ public:
         if(status)
             return status;
 		
-        cudaError_t result = cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 131072);
+        cudaError_t result;
+		if(result = cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 131072)) {
+			errorCuda(result);
+			return -1;
+		}
 
         return 0;
     }

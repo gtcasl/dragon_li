@@ -178,6 +178,9 @@ public:
     	SizeType index = util::prefixSumCta<THREADS, SizeType>(foundCount, total);
     
     	__syncthreads();
+
+//		if(threadIdx.x == 0)
+			//printf("total %d\n", total);
     	
     	if(total <= JOIN_BLOCK_CACHE_SIZE)
     	{

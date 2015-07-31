@@ -166,8 +166,12 @@ public:
 			return -1;
 
 		if(cpuJoinLeftIndices.size() != outputCount ||
-			cpuJoinRightIndices.size() != outputCount)
+			cpuJoinRightIndices.size() != outputCount) {
+
+			std::cout << "Error: cpuSize " << cpuJoinLeftIndices.size()
+				<< ", gpuSize " << outputCount << "\n";
 			return 1;
+		}
 
 		for(SizeType i = 0; i < outputCount; i++) {
 			SizeType cpuLeftId = cpuJoinLeftIndices[i];

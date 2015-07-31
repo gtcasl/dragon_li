@@ -25,7 +25,7 @@ public:
 		inputCountLeft(0),
 		inputCountRight(0) {}
 
-	int generateRandomData(SizeType countLeft, SizeType countRight) {
+	int generateRandomData(SizeType countLeft, SizeType countRight, DataType maxValue) {
 		
 		inputCountLeft = countLeft;
 		inputCountRight = countRight;
@@ -33,8 +33,8 @@ public:
 		inputLeft.resize(countLeft);
 		inputRight.resize(countRight);
 
-		dragon_li::util::Random<DataType, SizeType>::random(inputLeft.data(), countLeft, 0, countLeft);
-		dragon_li::util::Random<DataType, SizeType>::random(inputRight.data(), countRight, 0, countRight);
+		dragon_li::util::Random<DataType, SizeType>::random(inputLeft.data(), countLeft, 0, maxValue);
+		dragon_li::util::Random<DataType, SizeType>::random(inputRight.data(), countRight, 0, maxValue);
 
         std::sort(inputLeft.begin(), inputLeft.end());
         std::sort(inputRight.begin(), inputRight.end());

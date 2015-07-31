@@ -21,6 +21,24 @@ public:
 	
 	JoinCdp() : JoinReg< Settings >() {}
 
+	int setup(JoinData<Types> & joinData,
+				typename JoinBase<Settings>::UserConfig & userConfig) {
+
+
+		if(JoinReg<Settings>::setup(joinData, userConfig))
+			return -1;
+
+        cudaError_t result;
+		if(result = cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 131072)) {
+
+			errorCuda(result);
+			return -1;
+		}
+
+		return 0;
+	}
+
+	
 	int mainJoin() {
 
 		joinCdpMainJoinKernel< Settings >

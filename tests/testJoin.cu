@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 				_Types,						//types
 				128, 						//THREADS
 				240,						//CTAS
-				5,							//CDP_THREADS_BITS
-				32							//CDP_THRESHOLD
+				7,							//CDP_THREADS_BITS
+				128							//CDP_THRESHOLD
 				> _Settings;
 
 
@@ -36,8 +36,8 @@ int main(int argc, char **argv) {
 	typedef dragon_li::join::Settings<
 				_Settings, 					//Basic Settings
 				Types,						//Join Types
-				300,						//Join Scale Factor
-				100							//Join block scalefactor
+				700,						//Join Scale Factor
+				300							//Join block scalefactor
 				> Settings;
 
 	hydrazine::ArgumentParser parser(argc, argv);
@@ -62,6 +62,10 @@ int main(int argc, char **argv) {
 	Settings::SizeType inputRightCount;
 	parser.parse("-r", "--righCnt", inputRightCount, 1024, "Right input element count");
 
+
+	Settings::DataType maxInputValue;
+	parser.parse("-m", "--maxValue", maxInputValue, 1024, "Max input data value");
+
 	parser.parse();
 
 
@@ -73,7 +77,7 @@ int main(int argc, char **argv) {
 														);
 	
 		dragon_li::join::JoinData< Types > joinData;
-		joinData.generateRandomData(inputLeftCount, inputRightCount);
+		joinData.generateRandomData(inputLeftCount, inputRightCount, maxInputValue);
 
 		if(joinReg.setup(joinData, joinRegConfig))
 			return -1;
@@ -109,7 +113,7 @@ int main(int argc, char **argv) {
 														);
 	
 		dragon_li::join::JoinData< Types > joinData;
-		joinData.generateRandomData(inputLeftCount, inputRightCount);
+		joinData.generateRandomData(inputLeftCount, inputRightCount, maxInputValue);
 
 		if(joinCdp.setup(joinData, joinCdpConfig))
 			return -1;
