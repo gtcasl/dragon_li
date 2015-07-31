@@ -6,7 +6,7 @@
 #include <dragon_li/join/types.h>
 #include <dragon_li/join/settings.h>
 #include <dragon_li/join/joinReg.h>
-//#include <dragon_li/join/joinCdp.h>
+#include <dragon_li/join/joinCdp.h>
 #include <dragon_li/join/joinCpu.h>
 
 #undef REPORT_BASE
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 				dragon_li::join::JoinCpu<Types>::cpuJoinLeftIndices, 
 				dragon_li::join::JoinCpu<Types>::cpuJoinRightIndices,
 				joinData)) {
-				std::cout << "Verify correct!\n";
+				std::cout << "Non-CDP Verify correct!\n";
 			}
 			else {
 				std::cout << "Incorrect!\n";
@@ -100,37 +100,46 @@ int main(int argc, char **argv) {
 		if(joinReg.finish())
 			return -1;
 	}
-//	else {
-//		dragon_li::join::JoinCdp< Settings > joinCdp;
-//		dragon_li::join::JoinCdp< Settings >::UserConfig joinCdpConfig(
-//														verbose,
-//														veryVerbose,
-//														maxGridDataSize,
-//														maxRefineLevel,
-//														maxGridValue,
-//														gridRefineThreshold
-//														);
-//	
-//
-//		if(joinCdp.setup(joinCdpConfig))
-//			return -1;
-//	
-//		if(joinCdp.refine())
-//			return -1;
-//	
-////		if(verify) {
-////			dragon_li::join::JoinCpu<Types>::joinCpu(graph);
-////			if(!joinCdp.verifyResult(dragon_li::join::JoinCpu<Types>::cpuSearchDistance)) {
-////				std::cout << "Verify correct!\n";
-////			}
-////			else {
-////				std::cout << "Incorrect!\n";
-////			}
-////		}
-//	
-//		if(joinCdp.displayResult())
-//			return -1;
-//	}
+	else {
+#ifdef ENABLE_CDP
+		dragon_li::join::JoinCdp< Settings > joinCdp;
+		dragon_li::join::JoinCdp< Settings >::UserConfig joinCdpConfig(
+														verbose,
+														veryVerbose
+														);
+	
+		dragon_li::join::JoinData< Types > joinData;
+		joinData.generateRandomData(inputLeftCount, inputRightCount);
+
+		if(joinCdp.setup(joinData, joinCdpConfig))
+			return -1;
+	
+		if(joinCdp.join())
+			return -1;
+	
+		if(verify) {
+			dragon_li::join::JoinCpu<Types>::joinCpu(joinData);
+			if(!joinCdp.verifyResult(
+				dragon_li::join::JoinCpu<Types>::cpuJoinLeftIndices, 
+				dragon_li::join::JoinCpu<Types>::cpuJoinRightIndices,
+				joinData)) {
+				std::cout << "CDP Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
+	
+		if(joinCdp.displayResult())
+			return -1;
+
+		if(joinCdp.finish())
+			return -1;
+
+#else
+        std::cout << "CDP is not supported! Is CDP enabled in scons?\n";
+#endif
+	}
 
 
 	return 0;

@@ -5,7 +5,7 @@
 #include <dragon_li/util/primitive.h>
 
 #undef REPORT_BASE
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace dragon_li {
 namespace join {
@@ -175,7 +175,7 @@ public:
     	}
     	
     	SizeType total = 0;
-    	SizeType index = util::prefixSumCta<THREADS, DataType>(foundCount, total);
+    	SizeType index = util::prefixSumCta<THREADS, SizeType>(foundCount, total);
     
     	__syncthreads();
     	
@@ -183,7 +183,6 @@ public:
     	{
     		for(SizeType c = 0; c < foundCount; ++c)
     		{
-//    			DataType lValue = left[lower+c];
                 SizeType leftId = leftStartId + lower + c;
     			cacheLeft[index + c] = leftId;
 
@@ -192,8 +191,8 @@ public:
     		}
     		
     		__syncthreads();
-    		util::memcpyCta<THREADS, DataType>(outLeft, cacheLeft, total);
-    		util::memcpyCta<THREADS, DataType>(outRight, cacheRight, total);
+    		util::memcpyCta<THREADS, SizeType>(outLeft, cacheLeft, total);
+    		util::memcpyCta<THREADS, SizeType>(outRight, cacheRight, total);
     
     	}
     	else
@@ -209,8 +208,6 @@ public:
     			{
     				for(SizeType c = 0; c < foundCount; ++c)
     				{
-//    					DataType lValue = left[lower + c];
-//    					cache[index + c] = lValue; 
                         SizeType leftId = leftStartId + lower + c;
             			cacheLeft[index + c] = leftId;
 
@@ -233,8 +230,8 @@ public:
     			index -= copiedThisTime;
     			copiedSoFar += copiedThisTime;
     		
-    			outLeft = util::memcpyCta<THREADS, DataType>(outLeft, cacheLeft, copiedThisTime);
-    			outRight = util::memcpyCta<THREADS, DataType>(outRight, cacheRight, copiedThisTime);
+    			outLeft = util::memcpyCta<THREADS, SizeType>(outLeft, cacheLeft, copiedThisTime);
+    			outRight = util::memcpyCta<THREADS, SizeType>(outRight, cacheRight, copiedThisTime);
     	        
     		}
     
@@ -278,7 +275,6 @@ public:
     	SizeType* oBeginRight = devJoinRightOutIndicesScattered + devOutBounds[id] - devOutBounds[0];
     	SizeType* oRight      = oBeginRight;
     
-    	//SizeType joined_total = 0;
     
     	while(l != lend && r != rend)
     	{
@@ -295,22 +291,8 @@ public:
     	
     		if(lMaxValue < rMinValue)
     		{
-    //				if(debug && threadIdx.x == 0) {
-    //					printf("lMax = %u,rMin = %u\n", lMaxValue,(rMinValue) );
-    //					printf("%u, joined total for block = %d\n", blockIdx.x, joined_total);
-    //					printf("%u\n", sizeof(DataType));
-    //
-    //					for(SizeType iii = 0; iii < leftBlockSize; iii++)
-    //						printf("awu %u\n", extract<SizeType, 0, Left>(l[iii]));
-    //			
-    //					for(SizeType iii = 0; iii < leftBlockSize; iii++)
-    //						printf("cache %u\n", extract<SizeType, 0, Left>(leftCache[iii]));
-    //				}
-    //
-    
                 leftId += leftBlockSize;
     			l += leftBlockSize;
-    //			joined_total = 0;
     		}
     		else
     		{
@@ -324,24 +306,10 @@ public:
     			}
     			else
     			{
-    		//		if(blockIdx.x == 8 && threadIdx.x == 0 && l >= lend-144-256) {
-    		//			for(int iii = 0; iii < leftBlockSize; iii++)
-    		//				printf("left %d = %llu\n", iii, stripValues<Left, keyFields>(l[iii]));
-    		//			for(int iii = 0; iii < leftBlockSize; iii++)
-    		//				printf("right %d = %llu\n", iii, stripValues<Right, keyFields>(r[iii]));
-    		//		}
-    
-    
-    
     				SizeType joined = joinRegJoinBlock(oLeft, oRight,
     					leftId, leftCache,  leftBlockSize,
     					rightId, rightCache, rightBlockSize);
-    			//	if(blockIdx.x == 8 && threadIdx.x == 0 && l >= lend-144-256)
-    			//		printf("joined %d\n", joined);
-    
-                   //if(joined > 0) //FIX ME
     				{	
-    //					joined_total += joined;			
     					oLeft += joined;
                         oRight += joined;
 
@@ -355,27 +323,13 @@ public:
     					
     						__syncthreads();
     						rMinValue = *rightCache;
-    //						rMinValue = extract<SizeType,0, Right>(*rightCache);
     	
-       				
     						if(lMaxValue < rMinValue) break;
     			
-    //					if(blockIdx.x == 8 && threadIdx.x == 0 && l >= lend-144-256) {
-    //					for(int iii = 0; iii < leftBlockSize; iii++)
-    //						printf("left %d = %llu\n", iii, stripValues<Left, keyFields>(l[iii]));
-    //					for(int iii = 0; iii < leftBlockSize; iii++)
-    //						printf("right %d = %llu\n", iii, stripValues<Right, keyFields>(r[iii]));
-    //				}
-    
-    						joined = joinRegJoinBlock(oLeft, oRight,
+   						joined = joinRegJoinBlock(oLeft, oRight,
     							leftId, leftCache,  leftBlockSize,
     							rId, rightCache, rightBlockSize);
     	                           
-    
-    				//	if(blockIdx.x == 8 && threadIdx.x == 0 && l >= lend-144-256)
-    				//		printf("joined %d\n", joined);
-    						
-    //						joined_total += joined;
     						oLeft += joined;
                             oRight += joined;
 
@@ -387,17 +341,15 @@ public:
             	
                     leftId += leftBlockSize;
     				l += leftBlockSize;
-    //				if(debug && blockIdx.x == 70 && threadIdx.x == 0)
-    //					printf("lMax = %u, rMin = %u\n", (lMaxValue), (rMinValue));
-    //				printf("joined total for block = %d\n", joined_total);
-    //				joined_total = 0;
     			}
     			__syncthreads();
     		}
     	}
     
     
-    	if(threadIdx.x == 0) {devHistogram[id] = oLeft - oBeginLeft;/* if(debug && id == 70) printf("%u,histogram=%u\n",id,histogram[id]);*/}
+    	if(threadIdx.x == 0) {
+			devHistogram[id] = oLeft - oBeginLeft;
+		}
 
 	}
 

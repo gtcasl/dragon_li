@@ -85,7 +85,7 @@ public:
 					globalOffset + localOffset);
 
 
-			checkErrorDevice();
+//			checkErrorDevice();
 
 			rowLength -= (CDP_THREADS * cdpCtas);
 			rowOffset += (CDP_THREADS * cdpCtas);

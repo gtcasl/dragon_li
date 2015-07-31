@@ -48,7 +48,7 @@ public:
 	DataType * devJoinInputLeft;
 	DataType * devJoinInputRight;
 	SizeType * devJoinLeftOutIndices;
-	DataType * devJoinRightOutIndices;
+	SizeType * devJoinRightOutIndices;
 	SizeType * devJoinOutputCount;
 
 	JoinBase() : 
@@ -119,6 +119,10 @@ public:
 			return -1;
 		}
 
+#ifndef NDEBUG
+		util::debugInit();
+#endif
+
 		return 0;
 	}
 
@@ -133,7 +137,7 @@ public:
 		
 			if(retVal = cudaMemcpy(outputIndicesLeft.data(), 
 				devJoinLeftOutIndices, 
-				outputCount * sizeof(DataType), 
+				outputCount * sizeof(SizeType), 
 				cudaMemcpyDeviceToHost)) {
 
 				errorCuda(retVal);
@@ -142,7 +146,7 @@ public:
 
 			if(retVal = cudaMemcpy(outputIndicesRight.data(), 
 				devJoinRightOutIndices, 
-				outputCount * sizeof(DataType), 
+				outputCount * sizeof(SizeType), 
 				cudaMemcpyDeviceToHost)) {
 
 				errorCuda(retVal);

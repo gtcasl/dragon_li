@@ -59,7 +59,19 @@ public:
 			return -1;
 		}
 
+		if(retVal = cudaMemset(devLowerBounds, 
+			0, CTAS * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
 		if(retVal = cudaMalloc(&devUpperBounds, CTAS * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaMemset(devUpperBounds, 
+			0, CTAS * sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
 		}
@@ -69,30 +81,43 @@ public:
 			return -1;
 		}
 
+		if(retVal = cudaMemset(devOutBounds, 
+			0, (CTAS + 1) * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
 		if(retVal = cudaMalloc(&devHistogram, (CTAS + 1) * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+		if(retVal = cudaMemset(devHistogram, 
+			0, (CTAS + 1) * sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
 		}
 
 		estJoinOutCount = std::max(this->inputCountLeft, this->inputCountRight) * Settings::JOIN_SF; 
 
-		if(retVal = cudaMalloc(&devJoinLeftOutIndicesScattered, estJoinOutCount * sizeof(DataType))) {
+		if(retVal = cudaMalloc(&devJoinLeftOutIndicesScattered, estJoinOutCount * sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
 		}
-		if(retVal = cudaMalloc(&devJoinRightOutIndicesScattered, estJoinOutCount * sizeof(DataType))) {
+		if(retVal = cudaMemset(devJoinLeftOutIndicesScattered, 
+			0, estJoinOutCount * sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
 		}
-
-
-		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
-			(devJoinLeftOutIndicesScattered, 0, estJoinOutCount))
+		if(retVal = cudaMalloc(&devJoinRightOutIndicesScattered, estJoinOutCount * sizeof(SizeType))) {
+			errorCuda(retVal);
 			return -1;
-
-		if(dragon_li::util::memsetDevice<Settings::CTAS, Settings::THREADS, DataType, SizeType>
-			(devJoinRightOutIndicesScattered, 0, estJoinOutCount))
+		}
+		if(retVal = cudaMemset(devJoinRightOutIndicesScattered, 
+			0, estJoinOutCount * sizeof(SizeType))) {
+			errorCuda(retVal);
 			return -1;
+		}
 
 
 		return 0;
@@ -149,7 +174,7 @@ public:
 		
 	}
 
-	int mainJoin() {
+	virtual int mainJoin() {
 
 		joinRegMainJoinKernel< Settings >
 			<<< CTAS, THREADS >>> (
@@ -170,8 +195,8 @@ public:
 			return -1;
 		}
 
-//		std::vector<SizeType> upper(1200);
-//		cudaMemcpy(upper.data(), devJoinRightOutIndicesScattered, (1200) * sizeof(SizeType), cudaMemcpyDeviceToHost);
+//		std::vector<SizeType> upper(estJoinOutCount);
+//		cudaMemcpy(upper.data(), devJoinRightOutIndicesScattered, (estJoinOUtCount) * sizeof(SizeType), cudaMemcpyDeviceToHost);
 //		for(int i = 0; i < 1200; i++)
 //			std::cout << "u" << i << ": " << upper[i] << "\n";
 		
@@ -181,7 +206,7 @@ public:
 
 	int gather() {
 
-		if(util::prefixScan<THREADS, DataType>(devHistogram, CTAS + 1)) {
+		if(util::prefixScan<THREADS, SizeType>(devHistogram, CTAS + 1)) {
 			errorMsg("Prefix Sum for histogram fails");
 			return -1;
 		}
@@ -204,8 +229,18 @@ public:
 			errorCuda(retVal);
 			return -1;
 		}
+		if(retVal = cudaMemset(this->devJoinLeftOutIndices, 
+			0, this->outputCount * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
 
 		if(retVal = cudaMalloc(&this->devJoinRightOutIndices, this->outputCount * sizeof(SizeType))) {
+			errorCuda(retVal);
+			return -1;
+		}
+		if(retVal = cudaMemset(this->devJoinRightOutIndices, 
+			0, this->outputCount * sizeof(SizeType))) {
 			errorCuda(retVal);
 			return -1;
 		}
