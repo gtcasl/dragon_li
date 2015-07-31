@@ -49,8 +49,7 @@ for dirname in hydrazine_dirs:
 
 hydrazine_lib = env.StaticLibrary('libhydrazine', hydrazine_src, LIBS=['-lrt'])
 
-#NVCC = '/usr/local/cuda/bin/nvcc '
-NVCC = ' /home_sysperf/jinw//jinw_cnp_sw/sw/gpgpu/bin/x86_64_Linux_release/nvcc '
+NVCC = '/usr/local/cuda/bin/nvcc '
 NVCCFLAGS = ' -m64 -O3 '
 #NVCCFLAGS = ' -m64 -g -G '
 actionCommon = NVCC + NVCCFLAGS + ' -I. -I./hydrazine $SOURCES -o $TARGET $LIBS ' + env['_CPPDEFFLAGS']
