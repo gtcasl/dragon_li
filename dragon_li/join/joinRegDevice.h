@@ -152,8 +152,13 @@ public:
         const DataType* right, 
         const SizeType rightElements)
     {
+
+//#define STAGE_COPY
+
+#ifdef STAGE_COPY
     	__shared__ SizeType cacheLeft[JOIN_BLOCK_CACHE_SIZE];
     	__shared__ SizeType cacheRight[JOIN_BLOCK_CACHE_SIZE];
+#endif
     
     
     	const DataType* r = right + threadIdx.x;
@@ -181,6 +186,17 @@ public:
 
 //		if(threadIdx.x == 0)
 			//printf("total %d\n", total);
+
+#ifndef STAGE_COPY
+		for(SizeType c = 0; c < foundCount; c++) {
+			SizeType leftId = leftStartId + lower + c;
+			outLeft[index + c] = leftId;
+			
+			SizeType rightId = rightStartId + threadIdx.x;
+			outRight[index + c] = rightId;
+		}
+
+#else
     	
     	if(total <= JOIN_BLOCK_CACHE_SIZE)
     	{
@@ -240,7 +256,7 @@ public:
     		}
     
     	}
-    
+   #endif 
     	return total;
     }
 
