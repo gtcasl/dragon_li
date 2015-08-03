@@ -153,7 +153,10 @@ public:
         const SizeType rightElements)
     {
 
-//#define STAGE_COPY
+//MACRO to switch on stage copy optimization
+//where data are first copied to shared memory
+//and then to global memory
+#define STAGE_COPY 
 
 #ifdef STAGE_COPY
     	__shared__ SizeType cacheLeft[JOIN_BLOCK_CACHE_SIZE];
