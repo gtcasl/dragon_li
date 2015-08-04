@@ -75,7 +75,8 @@ dragon_li_dirs = [
 	'dragon_li/util',
 	'dragon_li/bfs',
 	'dragon_li/amr',
-	'dragon_li/join'
+	'dragon_li/join',
+	'dragon_li/sssp'
 ]
 
 dragon_li_install = env['install_path']
