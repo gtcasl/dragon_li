@@ -10,7 +10,7 @@
 #include <dragon_li/sssp/types.h>
 #include <dragon_li/sssp/settings.h>
 #include <dragon_li/sssp/ssspReg.h>
-//#include <dragon_li/sssp/ssspCpu.h>
+#include <dragon_li/sssp/ssspCpu.h>
 //#include <dragon_li/sssp/ssspCdp.h>
 
 #undef REPORT_BASE
@@ -104,15 +104,15 @@ int main(int argc, char **argv) {
 		if(ssspReg.search())
 			return -1;
 	
-//		if(verify) {
-//			dragon_li::sssp::SsspCpu<Types>::ssspCpu(graph);
-//			if(!ssspReg.verifyResult(dragon_li::sssp::SsspCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
-//		}
+		if(verify) {
+			dragon_li::sssp::SsspCpu<Settings>::ssspCpu(graph, startVertexId);
+			if(!ssspReg.verifyResult(dragon_li::sssp::SsspCpu<Settings>::cpuSearchDistance)) {
+				std::cout << "Verify correct!\n";
+			}
+			else {
+				std::cout << "Incorrect!\n";
+			}
+		}
 	
 		if(ssspReg.displayResult())
 			return -1;

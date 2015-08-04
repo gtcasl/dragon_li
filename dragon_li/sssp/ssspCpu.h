@@ -3,31 +3,46 @@
 #include <queue>
 
 namespace dragon_li {
-namespace bfs {
+namespace sssp {
 
-template< typename Types >
-class BfsCpu {
+template< typename Settings >
+class SsspCpu {
 	
 public:
 
-	typedef typename Types::SizeType SizeType;
-	typedef typename Types::VertexIdType VertexIdType;
+	typedef typename Settings::Types Types;
+	typedef typename Settings::SizeType SizeType;
+	typedef typename Settings::VertexIdType VertexIdType;
+	typedef typename Settings::EdgeWeightType EdgeWeightType;
 	
-	static std::vector<SizeType> cpuSearchDistance;
-
-	static int bfsCpu(dragon_li::util::GraphCsr< Types > & graph) {
-
-		cpuSearchDistance.resize(graph.vertexCount, -1);
+	static const EdgeWeightType INF_WEIGHT = Settings::INF_WEIGHT;
 	
-		std::queue<SizeType> bfsQueue;
-		bfsQueue.push(0); //start from 0;
-		cpuSearchDistance[0] = 0;
+	static std::vector<EdgeWeightType> cpuSearchDistance;
+
+	static int ssspCpu(dragon_li::util::GraphCsr< Types > & graph, VertexIdType srcVertexId) {
+
+		cpuSearchDistance.resize(graph.vertexCount, INF_WEIGHT);
+	
+		std::queue<SizeType> ssspQueue;
+		ssspQueue.push(srcVertexId); //start from src;
+		cpuSearchDistance[srcVertexId] = 0;
+
+		ssspQueue.push(-1); //Depth Marker
 		SizeType depth = 0;
 	
-		while(!bfsQueue.empty()) {
+		while(!ssspQueue.empty()) {
 	
-			VertexIdType nextVertex = bfsQueue.front();
-			bfsQueue.pop();
+			VertexIdType nextVertex = ssspQueue.front();
+			ssspQueue.pop();
+
+			if(nextVertex == -1) { //Depth Marker
+				depth++;
+
+				if(!ssspQueue.empty()) { //Not the last depth marker
+					ssspQueue.push(-1); //Push a new depth marker
+				}
+				continue;
+			}
 			
 			SizeType vertexDistance = cpuSearchDistance[nextVertex];
 	
@@ -36,24 +51,26 @@ public:
 
 			for(SizeType i = rowStart; i < rowEnd; i++) {
 				VertexIdType neighborVertex = graph.columnIndices[i];
-				if(cpuSearchDistance[neighborVertex] == -1) {
-					cpuSearchDistance[neighborVertex] = vertexDistance + 1;
-					bfsQueue.push(neighborVertex);
-					depth = vertexDistance + 1;
+				EdgeWeightType neighborWeight = graph.columnWeights[i];
+				EdgeWeightType neighborDistance = cpuSearchDistance[neighborVertex];
+				EdgeWeightType newDistance = vertexDistance + neighborWeight;
+				if(newDistance < neighborDistance) {
+					cpuSearchDistance[neighborVertex] = newDistance;
+					ssspQueue.push(neighborVertex);
 				}
 			}
 
 		}
 
-		std::cout << "CPU search depth = " << depth + 1 << "\n";
+		std::cout << "CPU search depth = " << depth << "\n";
 
 		return 0;
 	}
 
 };
 
-template<typename Types>
-std::vector<typename Types::SizeType> BfsCpu<Types>::cpuSearchDistance;
+template<typename Settings>
+std::vector<typename Settings::EdgeWeightType> SsspCpu<Settings>::cpuSearchDistance;
 
 }
 }
