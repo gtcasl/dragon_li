@@ -88,7 +88,7 @@ public:
 		}
 
 #ifndef NDEBUG
-		util::printChildKernelCount();
+		util::printCdpKernelCount();
 #endif
 
 		return 0;

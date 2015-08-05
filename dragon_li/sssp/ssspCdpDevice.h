@@ -73,7 +73,7 @@ public:
 		if(rowLength >= Settings::CDP_THRESHOLD) { //call cdp kernel
 
 #ifndef NDEBUG
-			util::kernelCountInc();
+			util::cdpKernelCountInc();
 #endif
 
 			SizeType CDP_THREADS = Settings::CDP_THREADS;

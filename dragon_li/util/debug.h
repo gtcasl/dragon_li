@@ -36,11 +36,17 @@ namespace dragon_li {
 namespace util {
 
 #ifndef NDEBUG
-__constant__ int *devChildKernelCount;
+
+#ifdef ENABLE_CDP
+__constant__ int *devCdpKernelCount;
+#endif
 
 int debugInit() {
+
+#ifdef ENABLE_CDP
 	void * devPtr;
 	cudaError_t status;
+
 	if(status = cudaMalloc(&devPtr, sizeof(int))) {
 		errorCuda(status);
 		return -1;
@@ -51,24 +57,26 @@ int debugInit() {
 		return -1;
 	}
 
-	if(status = cudaMemcpyToSymbol(devChildKernelCount, &devPtr, sizeof(int *))) {
+	if(status = cudaMemcpyToSymbol(devCdpKernelCount, &devPtr, sizeof(int *))) {
 		errorCuda(status);
 		return -1;
 	}
+#endif
 
 	return 0;
 }
 
-__device__ void kernelCountInc() {
+#ifdef ENABLE_CDP
+__device__ void cdpKernelCountInc() {
 
-	atomicAdd(devChildKernelCount, 1);
+	atomicAdd(devCdpKernelCount, 1);
 }
 
-int printChildKernelCount() {
+int printCdpKernelCount() {
 
 	void * devPtr;
 	cudaError_t status;
-	if(status = cudaMemcpyFromSymbol(&devPtr, devChildKernelCount, sizeof(int *))) {
+	if(status = cudaMemcpyFromSymbol(&devPtr, devCdpKernelCount, sizeof(int *))) {
 		errorCuda(status);
 		return -1;
 	}
@@ -83,6 +91,7 @@ int printChildKernelCount() {
 
 	return 0;
 }
+#endif
 
 #endif
 

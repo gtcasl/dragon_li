@@ -71,7 +71,7 @@ public:
 			SizeType cdpCtas = foundCount >> Settings::CDP_THREADS_BITS;
 
 #ifndef NDEBUG
-			util::kernelCountInc();
+			util::cdpKernelCountInc();
 #endif
 			
 			cudaStream_t s;
