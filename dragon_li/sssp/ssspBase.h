@@ -172,6 +172,10 @@ public:
 		if(ctaOutputAssignment.setup(0) != 0)
 			return -1;
 
+#ifndef NDEBUG
+		util::debugInit();
+#endif
+
 		return 0;
 	}
 

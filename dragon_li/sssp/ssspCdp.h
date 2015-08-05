@@ -1,165 +1,100 @@
 #ifdef ENABLE_CDP
 #pragma once
 
-#include <dragon_li/util/ctaOutputAssignment.h>
-#include <dragon_li/util/ctaWorkAssignment.h>
-
-#include <dragon_li/bfs/bfsCdpThread.h>
-
-#undef REPORT_BASE
-#define REPORT_BASE 0
+#include <dragon_li/sssp/ssspReg.h>
+#include <dragon_li/sssp/ssspCdpDevice.h>
 
 namespace dragon_li {
-namespace bfs {
+namespace sssp {
 
 template< typename Settings >
-class BfsCdpDevice {
+class SsspCdp : public SsspReg< Settings > {
 
 	typedef typename Settings::VertexIdType VertexIdType;
 	typedef typename Settings::SizeType SizeType;
-	typedef typename Settings::MaskType MaskType;
+	typedef typename Settings::EdgeWeightType EdgeWeightType;
+	typedef typename dragon_li::util::GraphCsrDevice<typename Settings::Types> GraphCsrDevice;
+
 	static const SizeType THREADS = Settings::THREADS;
 	static const SizeType CTAS = Settings::CTAS;
 
-	typedef typename dragon_li::util::CtaOutputAssignment<SizeType> CtaOutputAssignment;
-	typedef typename dragon_li::util::CtaWorkAssignment<Settings> CtaWorkAssignment;
 public:
+	
+	SsspCdp() : SsspReg< Settings >() {}
 
-	static __device__ void bfsCdpCtaExpand(
-		CtaWorkAssignment &ctaWorkAssignment,
-		VertexIdType * devColumnIndices,
-		SizeType * devRowOffsets,
-		SizeType * devSearchDistance,
-		VertexIdType * devFrontierContract,
-		VertexIdType * devFrontierExpand,
-		SizeType maxFrontierSize,
-		CtaOutputAssignment & ctaOutputAssignment,
-		SizeType iteration) {
+    int setup(
+	    	GraphCsrDevice &graphCsrDevice,
+			typename SsspReg<Settings>::UserConfig &userConfig) {
+		return setup(
+				graphCsrDevice.vertexCount,
+				graphCsrDevice.edgeCount,
+				graphCsrDevice.devColumnIndices,
+				graphCsrDevice.devColumnWeights,
+				graphCsrDevice.devRowOffsets,
+				userConfig
+			);
+	}
 
-
-		VertexIdType vertexId = -1;
-		SizeType rowOffset = -1;
-		SizeType nextRowOffset = -1;
-		SizeType rowLength = 0;
-
-		if(threadIdx.x < ctaWorkAssignment.workSize) {
-			vertexId = devFrontierContract[ctaWorkAssignment.workOffset + threadIdx.x];
-
-			SizeType searchDistance = devSearchDistance[vertexId];
-			if(searchDistance == -1)
-				devSearchDistance[vertexId] = iteration;
-			rowOffset = devRowOffsets[vertexId];
-			nextRowOffset = devRowOffsets[vertexId + 1];
-			rowLength = nextRowOffset - rowOffset;
-		}
-
-		SizeType totalOutputCount;
-		SizeType localOffset; //output offset within cta
-		localOffset = dragon_li::util::prefixSumCta<THREADS, SizeType>(rowLength, 
-				totalOutputCount);
-
-		__shared__ SizeType globalOffset;
-
-		if(threadIdx.x == 0 && totalOutputCount > 0) {
-			globalOffset = ctaOutputAssignment.getCtaOutputAssignment(totalOutputCount);
-		}
-
-		__syncthreads();
-
-		if(ctaOutputAssignment.getGlobalSize() > maxFrontierSize) //overflow
-			return;
-
-		if(rowLength >= Settings::CDP_THRESHOLD) { //call cdp kernel
-
-			SizeType CDP_THREADS = Settings::CDP_THREADS;
-			SizeType cdpCtas = rowLength >> Settings::CDP_THREADS_BITS;
-
-			cudaStream_t s;
-			cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
-			bfsCdpThreadExpandKernel<Settings>
-				<<< cdpCtas, CDP_THREADS, 0, s>>> (
-					rowOffset,
-					rowLength,
-					devColumnIndices,
-					devFrontierExpand,
-					globalOffset + localOffset);
-
-
-//			checkErrorDevice();
-
-			rowLength -= (CDP_THREADS * cdpCtas);
-			rowOffset += (CDP_THREADS * cdpCtas);
-			localOffset += (CDP_THREADS * cdpCtas);
-		}
-
-		for(SizeType columnId = 0; columnId < rowLength; columnId++) {
-			VertexIdType neighborVertexId = devColumnIndices[rowOffset + columnId];
-			devFrontierExpand[globalOffset + localOffset + columnId] = neighborVertexId;
-			reportDevice("%d.%d, neighborid %d, outputoffset %d", blockIdx.x, threadIdx.x, neighborVertexId, globalOffset + localOffset + columnId);
-		}
+    int setup(
+		SizeType _vertexCount,
+		SizeType _edgeCount,
+		VertexIdType * _devColumnIndices,
+		EdgeWeightType * _devColumnWeights,
+		SizeType * _devRowOffsets,
+		typename SsspReg<Settings>::UserConfig & userConfig) {
+       
+        int status = 0;
+ 
+        //Base class setup
+        status = SsspReg< Settings >::setup(
+            _vertexCount,
+            _edgeCount,
+            _devColumnIndices,
+			_devColumnWeights,
+            _devRowOffsets,
+            userConfig
+        );
+        if(status)
+            return status;
 		
-	}
-
-
-	static __device__ void bfsCdpExpandKernel(
-		VertexIdType * devColumnIndices,
-		SizeType * devRowOffsets,
-		SizeType * devSearchDistance,
-		VertexIdType * devFrontierContract,
-		VertexIdType * devFrontierExpand,
-		SizeType maxFrontierSize,
-		SizeType frontierSize,
-		CtaOutputAssignment & ctaOutputAssignment,
-		SizeType iteration) {
-
-		CtaWorkAssignment ctaWorkAssignment(frontierSize);
-
-
-		while(ctaWorkAssignment.workOffset < frontierSize) {
-			ctaWorkAssignment.getCtaWorkAssignment();
-
-			bfsCdpCtaExpand(
-				ctaWorkAssignment,
-				devColumnIndices,
-				devRowOffsets,
-				devSearchDistance,
-				devFrontierContract,
-				devFrontierExpand,
-				maxFrontierSize,
-				ctaOutputAssignment,
-				iteration);
+        cudaError_t result;
+		if(result = cudaDeviceSetLimit(cudaLimitDevRuntimePendingLaunchCount, 131072)) {
+			errorCuda(result);
+			return -1;
 		}
 
+        return 0;
+    }
+
+	int expand() {
+
+		ssspCdpExpandKernel< Settings >
+			<<< CTAS, THREADS >>> (
+				this->devColumnIndices,
+				this->devColumnWeights,
+				this->devRowOffsets,
+				this->devSearchDistance,
+				this->devFrontierIn,
+				this->devFrontierOut,
+				this->maxFrontierSize,
+				this->frontierSize,
+				this->ctaOutputAssignment,
+				this->iteration);
+
+		cudaError_t retVal;
+		if(retVal = cudaDeviceSynchronize()) {
+			errorCuda(retVal);
+			return -1;
+		}
+
+#ifndef NDEBUG
+		util::printChildKernelCount();
+#endif
+
+		return 0;
 
 	}
-
 };
-
-
-template< typename Settings >
-__global__ void bfsCdpExpandKernel(
-	typename Settings::VertexIdType * devColumnIndices,
-	typename Settings::SizeType * devRowOffsets,
-	typename Settings::SizeType * devSearchDistance,
-	typename Settings::VertexIdType * devFrontierContract,
-	typename Settings::VertexIdType * devFrontierExpand,
-	typename Settings::SizeType maxFrontierSize,
-	typename Settings::SizeType frontierSize,
-	typename dragon_li::util::CtaOutputAssignment< typename Settings::SizeType > ctaOutputAssignment,
-	typename Settings::SizeType iteration) {
-
-	BfsCdpDevice< Settings >::bfsCdpExpandKernel(
-					devColumnIndices,
-					devRowOffsets,
-					devSearchDistance,
-					devFrontierContract,
-					devFrontierExpand,
-					maxFrontierSize,
-					frontierSize,
-					ctaOutputAssignment,
-					iteration);
-
-}
 
 }
 }

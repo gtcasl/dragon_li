@@ -11,7 +11,7 @@
 #include <dragon_li/sssp/settings.h>
 #include <dragon_li/sssp/ssspReg.h>
 #include <dragon_li/sssp/ssspCpu.h>
-//#include <dragon_li/sssp/ssspCdp.h>
+#include <dragon_li/sssp/ssspCdp.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -118,36 +118,37 @@ int main(int argc, char **argv) {
 			return -1;
 	}
 
-//	else {
-//#ifdef ENABLE_CDP
-//		dragon_li::sssp::SsspCdp< Settings > ssspCdp;
-//		dragon_li::sssp::SsspCdp< Settings >::UserConfig ssspCdpConfig(
-//														verbose,
-//														veryVerbose,
-//														frontierScaleFactor);
-//	
-//		if(ssspCdp.setup(graphDev, ssspCdpConfig))
-//			return -1;
-//	
-//		if(ssspCdp.search())
-//			return -1;
-//	
-//		if(verify) {
-//			dragon_li::sssp::SsspCpu<Types>::ssspCpu(graph);
-//			if(!ssspCdp.verifyResult(dragon_li::sssp::SsspCpu<Types>::cpuSearchDistance)) {
-//				std::cout << "Verify correct!\n";
-//			}
-//			else {
-//				std::cout << "Incorrect!\n";
-//			}
-//		}
-//	
-//		if(ssspCdp.displayResult())
-//			return -1;
-//#else
-//        std::cout << "CDP is not supported! Is CDP enabled in scons?\n";
-//#endif
-//    }
+	else {
+#ifdef ENABLE_CDP
+		dragon_li::sssp::SsspCdp< Settings > ssspCdp;
+		dragon_li::sssp::SsspCdp< Settings >::UserConfig ssspCdpConfig(
+														verbose,
+														veryVerbose,
+														frontierScaleFactor,
+														startVertexId);
+	
+		if(ssspCdp.setup(graphDev, ssspCdpConfig))
+			return -1;
+	
+		if(ssspCdp.search())
+			return -1;
+	
+		if(verify) {
+			dragon_li::sssp::SsspCpu<Settings>::ssspCpu(graph, startVertexId);
+			if(!ssspCdp.verifyResult(dragon_li::sssp::SsspCpu<Settings>::cpuSearchDistance)) {
+				std::cout << "CDP Verify correct!\n";
+			}
+			else {
+				std::cout << "CDP Incorrect!\n";
+			}
+		}
+	
+		if(ssspCdp.displayResult())
+			return -1;
+#else
+        std::cout << "CDP is not supported! Is CDP enabled in scons?\n";
+#endif
+    }
 
 	return 0;
 }
