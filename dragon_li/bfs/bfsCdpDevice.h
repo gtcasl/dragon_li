@@ -3,6 +3,7 @@
 
 #include <dragon_li/util/ctaOutputAssignment.h>
 #include <dragon_li/util/ctaWorkAssignment.h>
+#include <dragon_li/util/debug.h>
 
 #include <dragon_li/bfs/bfsCdpThread.h>
 
@@ -74,6 +75,10 @@ public:
 			SizeType CDP_THREADS = Settings::CDP_THREADS;
 			SizeType cdpCtas = rowLength >> Settings::CDP_THREADS_BITS;
 
+#ifndef NDEBUG
+            util::cdpKernelCountInc();
+#endif
+
 			cudaStream_t s;
 			cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
 			bfsCdpThreadExpandKernel<Settings>
@@ -84,8 +89,7 @@ public:
 					devFrontierExpand,
 					globalOffset + localOffset);
 
-
-//			checkErrorDevice();
+			checkErrorDevice();
 
 			rowLength -= (CDP_THREADS * cdpCtas);
 			rowOffset += (CDP_THREADS * cdpCtas);

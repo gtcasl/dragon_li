@@ -1,6 +1,8 @@
 #ifdef ENABLE_CDP
 #pragma once
 
+#include <dragon_li/util/timer.h>
+#include <dragon_li/util/debug.h>
 #include <dragon_li/bfs/bfsReg.h>
 #include <dragon_li/bfs/bfsCdpDevice.h>
 
@@ -64,6 +66,14 @@ public:
 
 	int expand() {
 
+#ifndef NDEBUG
+        util::resetCdpKernelCount();
+#endif
+
+        if(util::testIteration(this->iteration)) {
+            this->gpuTimer.Start();
+        }
+
 		bfsCdpExpandKernel< Settings >
 			<<< CTAS, THREADS >>> (
 				this->devColumnIndices,
@@ -76,12 +86,21 @@ public:
 				this->ctaOutputAssignment,
 				this->iteration);
 
+        if(util::testIteration(this->iteration)) {
+            this->gpuTimer.Stop();
+            this->gpuTimer.UpdateElapsedMillis();
+        }
+
 		cudaError_t retVal;
 		if(retVal = cudaDeviceSynchronize()) {
 			errorCuda(retVal);
 			return -1;
 		}
 
+#ifndef NDEBUG
+        util::printCdpKernelCount();
+#endif 
+     
 		return 0;
 
 	}

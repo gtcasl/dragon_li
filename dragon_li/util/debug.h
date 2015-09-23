@@ -35,6 +35,25 @@
 namespace dragon_li {
 namespace util {
 
+
+bool inline testIteration(int iteration) {
+
+    return true;
+
+//    switch(iteration) {
+//    case 2: 
+//    case 3: 
+//    case 4:
+//    case 5:
+//    case 6:
+//    case 7:
+//        return true;
+//    default:
+//        return false;
+//    }
+}
+
+
 #ifndef NDEBUG
 
 #ifdef ENABLE_CDP
@@ -44,6 +63,7 @@ __constant__ int *devCdpKernelCount;
 int debugInit() {
 
 #ifdef ENABLE_CDP
+{
 	void * devPtr;
 	cudaError_t status;
 
@@ -61,6 +81,7 @@ int debugInit() {
 		errorCuda(status);
 		return -1;
 	}
+}
 #endif
 
 	return 0;
@@ -72,6 +93,12 @@ __device__ void cdpKernelCountInc() {
 	atomicAdd(devCdpKernelCount, 1);
 }
 
+void resetCdpKernelCount() {
+    void * devPtr;
+    cudaMemcpyFromSymbol(&devPtr, devCdpKernelCount, sizeof(int *));
+    cudaMemset(devPtr, 0, sizeof(int));
+}
+
 int printCdpKernelCount() {
 
 	void * devPtr;
@@ -81,13 +108,13 @@ int printCdpKernelCount() {
 		return -1;
 	}
 
-	int childKernelCount;
-	if(status = cudaMemcpy(&childKernelCount, devPtr, sizeof(int), cudaMemcpyDeviceToHost)) {
+	int cdpKernelCount;
+	if(status = cudaMemcpy(&cdpKernelCount, devPtr, sizeof(int), cudaMemcpyDeviceToHost)) {
 		errorCuda(status);
 		return -1;
 	}
 
-	std::cout << "Child Kernel Count " << childKernelCount << "\n";
+	std::cout << "CDP Kernel Count " << cdpKernelCount << "\n";
 
 	return 0;
 }

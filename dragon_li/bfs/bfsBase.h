@@ -5,6 +5,8 @@
 #include <dragon_li/util/userConfig.h>
 #include <dragon_li/util/memsetDevice.h>
 #include <dragon_li/util/ctaOutputAssignment.h>
+#include <dragon_li/util/timer.h>
+#include <dragon_li/util/debug.h>
 
 #undef REPORT_BASE
 #define REPORT_BASE 0
@@ -64,6 +66,10 @@ public:
 
 	//Cta Output Assignement
 	CtaOutputAssignment ctaOutputAssignment;
+
+    //Timer
+    util::CpuTimer cpuTimer;
+    util::GpuTimer gpuTimer;
 
 	BfsBase() : 
 		verbose(false),
@@ -168,6 +174,11 @@ public:
 		if(ctaOutputAssignment.setup(0) != 0)
 			return -1;
 
+#ifndef NDEBUG
+        //debugger Init
+        util::debugInit();
+#endif
+
 		return 0;
 	}
 
@@ -251,7 +262,10 @@ public:
 	}
 
 
-	virtual int finish() { return 0;}
+	virtual int finish() { 
+        cudaDeviceReset();
+        return 0;
+    }
 
 };
 

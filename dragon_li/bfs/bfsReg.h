@@ -1,5 +1,6 @@
 #pragma once
 
+#include <dragon_li/util/timer.h>
 #include <dragon_li/bfs/bfsBase.h>
 #include <dragon_li/bfs/bfsRegDevice.h>
 
@@ -23,7 +24,7 @@ public:
 	BfsReg() : BfsBase< Settings >() {}
 
 	int search() {
-		while(this->frontierSize > 0) {
+		while(this->frontierSize > 0 /*&& this->iteration <=5*/) {
 			report("Start BFS Search in regular mode... (" << CTAS << ", " << THREADS << ")");
 			report("Iteration " << this->iteration );
 
@@ -68,6 +69,10 @@ public:
 
 	virtual int expand() {
 				
+        if(util::testIteration(this->iteration)) {
+            this->gpuTimer.Start();
+        }
+
 		bfsRegExpandKernel< Settings >
 			<<< CTAS, THREADS >>> (
 				this->devColumnIndices,
@@ -80,11 +85,17 @@ public:
 				this->ctaOutputAssignment,
 				this->iteration);
 
+        if(util::testIteration(this->iteration)) {
+            this->gpuTimer.Stop();
+            this->gpuTimer.UpdateElapsedMillis();
+        }
+
 		cudaError_t retVal;
 		if(retVal = cudaDeviceSynchronize()) {
 			errorCuda(retVal);
 			return -1;
 		}
+
 
 		return 0;
 	}
