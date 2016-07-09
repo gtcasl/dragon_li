@@ -38,7 +38,7 @@ number higher than 6.5 may also work but has not been tested.
 
 - To build the benchmark with CDP, run:
 
-`scons cdp=1`
+`scons cdp=1 no_debug=1`
 
 - You may get a list of building options by running:
 
@@ -50,3 +50,26 @@ The generated executables are installed uner `dragon_li_top_dir/bin/. You may ru
 executable with "`-h`" to look up available options. For example:
 
 `testBfs -h`
+
+## Test with GPGPU-Sim
+
+- Use the config file `gpgpusim.config` under this branch.
+- Download the graphs used by the benchmarks from [http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/citationCiteseer.graph.bz2](http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/citationCiteseer.graph.bz2) and [http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/coPapersDBLP.graph.bz2](http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/coPapersDBLP.graph.bz2). Unzip and save the graphs under `top_dir/graphs`.
+- The followings are eight different benchmark tests for GPGPUSim. "Verify correct" will be shown in the output to indicate the benchmark runs correctly.
+
+`./bin/testBfs -g graphs/sample_cdp.gr -e -v --cdp`
+
+`./bin/testBfs -g graphs/citationCiteseer.graph -f metis -e -v --cdp`
+
+`./bin/testBfs -g graphs/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5`
+
+`./bin/testAmr -v -e --cdp -r 20`
+
+`./bin/testSssp -g graphs/sample_cdp.gr -e -v --cdp`
+
+`./bin/testSssp -g graphs/citationCiteseer.graph -f metis -e -v --cdp`
+
+`./bin/testSssp -g graphs/coPapersDBLP.graph -f metis -e -v --cdp`
+
+`./bin/testJoin -v -e --cdp -l 204800 -r 204800`
+
