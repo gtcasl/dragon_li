@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
                 _Types,                     //types
                 128,                        //THREADS
                 240,                        //CTAS
-                7,                          //CDP_THREADS_BITS
-                128                         //CDP_THRESHOLD
+                8,                          //CDP_THREADS_BITS
+                256                         //CDP_THRESHOLD
                 > _Settings;
 
 
