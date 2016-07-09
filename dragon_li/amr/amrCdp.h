@@ -43,6 +43,9 @@ public:
 
 	int refine() {
 
+#ifndef NDEBUG
+        util::resetCdpKernelCount();
+#endif
 		amrCdpRefineKernel< Settings >
 				<<< CTAS, THREADS >>> (
 					this->devGridData,
@@ -59,6 +62,9 @@ public:
 			return -1;
 		}
 
+#ifndef NDEBUG
+        util::printCdpKernelCount();
+#endif 
 		if(this->ctaOutputAssignment.getGlobalSize(this->activeGridSize))
 			return -1;
 

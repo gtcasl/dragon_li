@@ -130,6 +130,11 @@ public:
 		if(ctaOutputAssignment.setup(activeGridSize) != 0)
 			return -1;
 
+#ifndef NDEBUG
+        //debugger Init
+        util::debugInit();
+#endif
+
 		return 0;
 
 	}

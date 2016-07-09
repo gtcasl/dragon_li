@@ -4,6 +4,7 @@
 
 #include <dragon_li/util/ctaOutputAssignment.h>
 #include <dragon_li/util/ctaWorkAssignment.h>
+#include <dragon_li/util/debug.h>
 #include <dragon_li/amr/amrRegDevice.h>
 
 #undef REPORT_BASE
@@ -98,6 +99,9 @@ __global__ void amrCdpThreadRefineKernel(
 			//reportDevice("launch data %f, %d\n", gridData, refineSize);
 			SizeType cdpCtas = (refineSize + Settings::CDP_THREADS - 1) >> Settings::CDP_THREADS_BITS;
 			//reportDevice("%d.%d: cdpCtas %d\n", blockIdx.x, threadIdx.x, cdpCtas);
+#ifndef NDEBUG
+            util::cdpKernelCountInc();
+#endif
 			cudaStream_t s;
 			cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
 			amrCdpThreadRefineKernel<Settings>
