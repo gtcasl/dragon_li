@@ -53,7 +53,7 @@ executable with "`-h`" to look up available options. For example:
 
 ## Test with GPGPU-Sim
 
-- Use the config file `gpgpusim.config` and `config_fermi_islip.icnt` under this branch.
+- Use the config files in `gpgpusim_config` under this branch.
 - Download the graphs used by the benchmarks from [http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/citationCiteseer.graph.bz2](http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/citationCiteseer.graph.bz2) and [http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/coPapersDBLP.graph.bz2](http://www.cc.gatech.edu/dimacs10/archive/data/coauthor/coPapersDBLP.graph.bz2). Unzip and save the graphs under `top_dir/graphs`.
 - The followings are eight different benchmark tests for GPGPUSim. "Verify correct" will be shown in the output to indicate the benchmark runs correctly.
 
